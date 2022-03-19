@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline'"
+    />
+    <title>Hello Electron React!</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+  <script>
+    console.log('jsbridge init start')
+    window.jsBridge = {
+      invoke: (bridgeName,data, callback) => {
+        if (typeof window.electron === 'object') {
+          window.electron.invoke(bridgeName, data, callback);
+        } else {
+          // 你可以在这里使用更完善的降级处理方案。
+          console.log('Non-electron environment!');
+        }
+      },
+    };
+  </script>
+</html>
