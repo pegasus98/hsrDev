@@ -9,16 +9,14 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import { spawn } from 'child_process';
-import { Adb } from '@devicefarmer/adbkit';
 import apiList from './api';
 import iconvLite from 'iconv-lite';
-
+import {MessageType} from 'defines'
 export default class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -28,16 +26,11 @@ export default class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-interface MessageType {
-  bridgeName: string;
-  data: any;
-  cid: number;
-}
+
 
 // add bridge
 ipcMain.on('postMessage', async (event, message: MessageType) => {
   const nativeEvent = apiList[message.bridgeName];
-  console.log(message)
   try {
     const result = await nativeEvent(message.data);
     event.reply('receiveMessage', {
@@ -45,11 +38,13 @@ ipcMain.on('postMessage', async (event, message: MessageType) => {
       cid: message.cid,
       data: result,
     });
+    console.log('deal with',message.bridgeName,message.cid,)
   } catch (err: any) {
     event.reply('receiveMessage', {
       bridgeName: message.bridgeName,
       error: { code: 500, message: err.message },
     });
+    console.log('deal with',message.bridgeName,message.cid,)
   }
 });
 
@@ -96,6 +91,7 @@ const createWindow = async () => {
     width: 1024,
     height: 728,
     icon: getAssetPath('icon.png'),
+    title:'跨层分析软件',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -129,47 +125,7 @@ const createWindow = async () => {
 
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
-  new AppUpdater();
-};
-/*
- * child process test
- */
-const runExec = async () => {
-  console.log('*********test ************');
-  //const bat = spawn('cmd.exe', ['/c', 'scripts\\test.bat']);
-  const bat = spawn('adb.exe', ['devices']);
-
-  bat.stdout.on('data', (data) => {
-    console.log(`stdout:${iconvLite.decode(data, 'cp936')}`);
-  });
-
-  bat.stderr.on('data', (data) => {
-    console.error(`stderror:${iconvLite.decode(data, 'cp936')}`);
-  });
-
-  bat.on('exit', (code) => {
-    console.log(`Child exited with code ${code}`);
-  });
-};
-
-/**
- * Add adb test
- */
-
-const client = Adb.createClient();
-
-const testadb = async () => {
-  const devices = await client.listDevices();
-  console.log(devices)
-  const device = client.getDevice(devices[0].id);
-  device
-    .shell(
-      'su -c /data/data/ru.meefik.linuxdeploy/files/bin/linuxdeploy shell ls'
-    )
-    .then(Adb.util.readAll)
-    .then(function (output: { toString: () => string }) {
-      console.log('[%s] %s', devices[0].id, output.toString().trim());
-    });
+  //new AppUpdater();
 };
 
 /**
@@ -189,7 +145,8 @@ app
   .then(() => {
     createWindow();
     //runExec();
-    testadb();
+    //testadb();
+    
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
@@ -197,3 +154,4 @@ app
     });
   })
   .catch(console.log);
+export { mainWindow };

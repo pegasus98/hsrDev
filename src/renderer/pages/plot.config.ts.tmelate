@@ -1,0 +1,40 @@
+interface ApiType {
+    [key: string]: string[];
+  }
+export const plotTypeList= [
+    {
+        title: '单条数据分析',
+        key: 'singleExp',
+        children:[
+            {
+                title: '吞吐量时序图',
+                key: 'throughput_timeseries',
+            }
+        ]
+    },
+    {
+        title:"多数据统计",
+        key:'multiExp',
+        children:[
+            {
+                title: '吞吐量',
+                key: 'throughput',
+            },
+            {
+                title: '延迟CDF',
+                key: 'latency_cdf',
+            },
+            {
+                title: '延迟时序分布',
+                key: 'latency_timeseries',
+            }
+        ]
+    }
+]
+
+export const plotExpRel:ApiType={
+    latency_cdf:['lat'],
+    latency_timeseries:['lat'],
+    throughput:['QUIC','TCP'],
+    throughput_timeseries:['QUIC','TCP']
+}

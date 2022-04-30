@@ -1,0 +1,4 @@
+[submodule "src\\py"]
+	path = src\\py
+	url = git@github.com:PanJason/NR5G_Network_Profiling.git
+	branch = plotserver

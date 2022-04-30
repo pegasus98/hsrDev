@@ -1,30 +1,10 @@
 const { channel } = require('diagnostics_channel');
 const { contextBridge, ipcRenderer } = require('electron');
 
-let cid = 0
-const callbacks = {}
-// contextBridge.exposeInMainWorld('electron', {
-//   ipcRenderer: {
-//     myPing() {
-//       ipcRenderer.send('ipc-example', 'ping');
-//     },
-//     on(channel, func) {
-//       const validChannels = ['ipc-example'];
-//       if (validChannels.includes(channel)) {
-//         // Deliberately strip event as it includes `sender`
-//         ipcRenderer.on(channel, (event, ...args) => func(...args));
-//       }
-//     },
-//     once(channel, func) {
-//       const validChannels = ['ipc-example'];
-//       if (validChannels.includes(channel)) {
-//         // Deliberately strip event as it includes `sender`
-//         ipcRenderer.once(channel, (event, ...args) => func(...args));
-//       }
-//     },
-//   },
-// });
+let cid = 0;
+const callbacks = {};
 
+let channelCallback=[]
 contextBridge.exposeInMainWorld('electron', {
   invoke(bridgeName, data, callback) {
     // 如果不存在方法名或不为字符串，则提示调用失败
@@ -48,6 +28,7 @@ contextBridge.exposeInMainWorld('electron', {
       const { data, cid, error } = message;
       // 如果存在方法名，则调用对应函数
       if (typeof cid === 'number' && cid >= 1) {
+        console.log('callback'+message.bridgeName,cid)
         if (typeof error !== 'undefined') {
           callbacks[cid](error);
           delete callbacks[cid];
@@ -55,11 +36,30 @@ contextBridge.exposeInMainWorld('electron', {
           callbacks[cid](null, data);
           delete callbacks[cid];
         } else {
-          throw new Error('Invalid callback id');
+          throw new Error('Invalid callback id in ipc '+ message.bridgeName );
         }
       } else {
-        throw new Error('message format error');
+        throw new Error('message format error in ipc '+ message.bridgeName );
       }
     });
+  },
+  on(channel, func) {
+    const validChannels = ['ipc-example','expStatus','throughput','serverStatus','getDeviceDataStatus','getServerDataStatus','sendImgSrc'];
+    if (validChannels.includes(channel)) {
+      console.log('render on channel',channel)
+      if(!channelCallback.includes(channel)){
+        channelCallback.push(channel)
+        ipcRenderer.on(channel, (event, ...args) => func(...args));
+      }
+      else{
+        console.log('channel callback second init ')
+      }
+    }
+    else{
+      console.log('error webcontent channel');
+    }
+  },
+  once(channel, func) {
+        ipcRenderer.once(channel, (event, ...args) => func(...args));
   },
 });
