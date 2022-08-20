@@ -8,15 +8,18 @@ import {
   Modal,
   Select,
   Form,
+  Layout,
 } from 'antd';
+import { Content, Footer, Header } from 'antd/lib/layout/layout';
 import { expItemType } from 'defines';
-import {  useState } from 'react';
+import { useState } from 'react';
 import DeviceBox from './deviceBox';
 import ServerBox from './serverBox';
 const { Option } = Select;
 
 export default function home(props: any) {
   const columns = [
+
     {
       title: '设备id',
       dataIndex: 'deviceId',
@@ -55,13 +58,11 @@ export default function home(props: any) {
     {
       title: '实验时长',
       dataIndex: 'timeDur',
-      key:'timeDur',
-      render:(timeDur:number|undefined)=>{
-        if(timeDur)
-          return timeDur.toString()
-        else 
-          return ''
-      }
+      key: 'timeDur',
+      render: (timeDur: number | undefined) => {
+        if (timeDur) return timeDur.toString();
+        else return '';
+      },
     },
     // {
     //   title: '操作',
@@ -83,7 +84,8 @@ export default function home(props: any) {
   };
 
   const createDeviceOptions = (list: any[]) => {
-    return list.map((item) => {
+    const deviceListOptions=
+    list.map((item) => {
       const { id } = item;
       return (
         <Option key={id} value={id}>
@@ -91,11 +93,12 @@ export default function home(props: any) {
         </Option>
       );
     });
+    return deviceListOptions
   };
   const createServerOptions = (list: any[]) => {
     return list.map((item) => {
-      const { ip,username } = item;
-      const serverPath=[username,ip].join('@')
+      const { ip, username } = item;
+      const serverPath = [username, ip].join('@');
       return (
         <Option key={serverPath} value={serverPath}>
           {serverPath}
@@ -113,57 +116,73 @@ export default function home(props: any) {
   }
   if (flag != disabled) setDisabled(flag);
 
-
   const formLayout = {
     labelCol: { span: 8 },
     wrapperCol: { span: 16 },
-  }; 
-
+  };
 
   return (
-    <>
-      <Row>
-        <Col span={6}>
-          <Button
-            type="primary"
-            onClick={() => {
-              setVisiable(true);
-            }}
-            disabled={disabled}
-          >
-            添加实验
-          </Button>
-        </Col>
-        <Col span={6}>
-          <span>重复次数</span>
-          <InputNumber min={0} max={10} defaultValue={0}></InputNumber>
-        </Col>
-        <Col span={6}>
-          <Button type="primary" onClick={props.startExp} disabled={disabled}>
-            开始实验
-          </Button>
-        </Col>
-        <Col span={6}>
-          <Button type="primary" onClick={props.clearExp} disabled={disabled}>
-            清空
-          </Button>
-        </Col>
-      </Row>
-      <Modal
-        title="添加实验"
-        visible={visiable}
-        onCancel={() => {
-          setVisiable(false);
+    <Layout>
+      <Header
+        style={{
+          background: '#fff',
+          textAlign: 'center',
+          padding: 0,
         }}
-        footer={
-          <Button form="expInput" key="submit" htmlType="submit">
-            添加
-          </Button>
-        }
-        destroyOnClose
       >
-        <Form id="expInput" form={form} onFinish={handleOk} preserve={false} {...formLayout}>
-
+        <Row>
+          <Col span={6}>
+            <Button
+              type="primary"
+              onClick={() => {
+                setVisiable(true);
+              }}
+              disabled={disabled}
+            >
+              添加实验
+            </Button>
+          </Col>
+          {/* <Col span={6}>
+            <span>重复次数</span>
+            <InputNumber min={0} max={10} defaultValue={0}></InputNumber>
+          </Col> */}
+          <Col span={6}>
+            <Button type="primary" onClick={props.startExp} disabled={disabled}>
+              开始实验
+            </Button>
+          </Col>
+          <Col span={6}>
+            <Button type="primary" onClick={props.clearExp} disabled={disabled}>
+              清空
+            </Button>
+          </Col>
+        </Row>{' '}
+      </Header>
+      <Content
+        style={{
+          margin: '24px 16px 0',
+        }}
+      >
+        <Modal
+          title="添加实验"
+          visible={visiable}
+          onCancel={() => {
+            setVisiable(false);
+          }}
+          footer={
+            <Button form="expInput" key="submit" htmlType="submit">
+              添加
+            </Button>
+          }
+          destroyOnClose
+        >
+          <Form
+            id="expInput"
+            form={form}
+            onFinish={handleOk}
+            preserve={false}
+            {...formLayout}
+          >
             <Form.Item
               label="设备"
               name="deviceId"
@@ -201,37 +220,46 @@ export default function home(props: any) {
                 <Option key="udp" value="udp">
                   UDP
                 </Option>
+                <Option key="video" value="video">
+                  Video
+                </Option>
               </Select>
             </Form.Item>
             <Form.Item
               label="实验时长（秒）"
               name="timeDur"
               rules={[{ required: true }]}
-            > 
-            <InputNumber max='120' min='10'></InputNumber>
-              </Form.Item>
-        </Form>
-      </Modal>
+            >
+              <InputNumber max="120" min="10"></InputNumber>
+            </Form.Item>
+          </Form>
+        </Modal>
 
-      <Row>
-        <Col span={24}>
-          <Table
-            rowKey={(record) => {
-              return [record.deviceId, record.status].join('-');
-            }}
-            columns={columns}
-            dataSource={props.expList}
-          />
-        </Col>
-      </Row>
-      <Row>
-        <Col span={12}>
-          <DeviceBox {...props}></DeviceBox>
-        </Col>
-        <Col span={12}>
-          <ServerBox {...props}></ServerBox>
-        </Col>
-      </Row>
-    </>
+        <Row>
+          <Col span={24}>
+            <Table
+              rowKey={(record) => {
+                return [record.deviceId, record.status].join('-');
+              }}
+              columns={columns}
+              dataSource={props.expList}
+            />
+          </Col>
+        </Row>
+
+      </Content>
+      <Footer style = {
+				{
+					textAlign: 'center'
+				}
+			} >         <Row>
+      <Col span={12} >
+        <DeviceBox {...props}></DeviceBox>
+      </Col>
+      <Col span={12} >
+        <ServerBox {...props}></ServerBox>
+      </Col>
+    </Row></Footer>
+    </Layout>
   );
 }

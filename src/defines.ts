@@ -20,6 +20,7 @@ interface serverInfoItem {
     port: number;
   }
 interface projectItemType {
+  trace:number;
   index: string;
   deviceId: string;
   serverPath: string;
@@ -45,7 +46,33 @@ interface throughputDataItem {
   data: number[];
   expAppendList: string[];
 }
+interface LineDataItem {
+  name: string;
+  type: string;
+  data: number[];
+}
+interface DetailLineDataItem{
+  timestamp:number;
+  time?:string;
+  value:number;
+}
+interface snrLineDataItem{
+  timestamp:number;
+  value:number;
+  rat:string
+}
+interface NumberLineDataItem{
+  timestamp:number;
+  value:number
+}
 
+interface HandoverDataItem{
+  start:string;
+  timestamp:number;
+  duration:number
+  end:string;
+  type:number;
+}
 export {
   ObjectType,
   projectDataType,
@@ -54,4 +81,9 @@ export {
   expItemType,
   throughputDataItem,
   serverInfoItem,
+  LineDataItem,
+  DetailLineDataItem,
+  NumberLineDataItem,
+  HandoverDataItem,
+  snrLineDataItem
 };

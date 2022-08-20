@@ -12,11 +12,16 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import {
+  ChildProcess,
+  ChildProcessWithoutNullStreams,
+  spawn,
+} from 'child_process';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import apiList from './api';
 import iconvLite from 'iconv-lite';
-import {MessageType} from 'defines'
+import { MessageType } from 'defines';
 export default class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -25,8 +30,18 @@ export default class AppUpdater {
   }
 }
 
-let mainWindow: BrowserWindow | null = null;
+class MyFrame {
+  window: BrowserWindow | null;
+  constructor() {
+    this.window = null;
+  }
+  setWindow(newWindow: BrowserWindow | null) {
+    this.window = newWindow;
+  }
+}
 
+let mainWindow: BrowserWindow | null = null;
+let logFrame = new MyFrame();
 
 // add bridge
 ipcMain.on('postMessage', async (event, message: MessageType) => {
@@ -38,13 +53,11 @@ ipcMain.on('postMessage', async (event, message: MessageType) => {
       cid: message.cid,
       data: result,
     });
-    console.log('deal with',message.bridgeName,message.cid,)
   } catch (err: any) {
     event.reply('receiveMessage', {
       bridgeName: message.bridgeName,
       error: { code: 500, message: err.message },
     });
-    console.log('deal with',message.bridgeName,message.cid,)
   }
 });
 
@@ -91,7 +104,7 @@ const createWindow = async () => {
     width: 1024,
     height: 728,
     icon: getAssetPath('icon.png'),
-    title:'跨层分析软件',
+    title: '跨层分析软件',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
@@ -139,14 +152,44 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+let pyProc: ChildProcessWithoutNullStreams | null = null;
+
+const createPyProc = () => {
+  console.log(__dirname);
+  let script = path.join(__dirname, '..\\py', 'plot_server.py');
+  pyProc = spawn('python', [script]);
+
+  if (pyProc != null) {
+    console.log('child process success');
+
+    pyProc.stdout.on('data', (data) => {
+      let dataString = iconvLite.decode(data, 'cp936');
+      dataString.split('\r\n').forEach((line: string) => {
+        let r = /^#@[\s\S]+$/;
+        console.log("line:",line)
+        if (r.test(line)) {
+          mainWindow?.webContents.send('analysisLog', {
+            dataString: line.substring(2),
+          });
+        }
+      });
+    });
+  }
+};
+
+const exitPyProc = () => {
+  if (pyProc) pyProc.kill();
+  pyProc = null;
+};
 
 app
   .whenReady()
   .then(() => {
     createWindow();
+    //createPyProc();
     //runExec();
     //testadb();
-    
+
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
@@ -154,4 +197,4 @@ app
     });
   })
   .catch(console.log);
-export { mainWindow };
+export { mainWindow, logFrame };

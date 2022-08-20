@@ -1,0 +1,42 @@
+.borderbox {
+    border: 1px solid #000
+}
+.smallbox {
+  padding-left: 10px;
+  height: 80px;
+  text-align: left;
+  font-size: 17px;
+  margin: 0;
+  border: 0;
+}
+
+.bigbox {
+  padding: 10px;
+  height: 80px;
+  background-color: #4072c4;
+  font-size: 18px;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.bigboxText {
+  color: white;
+  margin: 0;
+}
+.boxText{
+  margin:0;
+  font-size: 17px;
+}
+
+.leftbox{
+    font-size:18px;
+}
+
+.leftbox{
+    font-size:18px;
+}
+
+
+.tableText{
+    font-size:18px;
+}

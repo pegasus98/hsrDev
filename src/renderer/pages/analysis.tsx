@@ -1,22 +1,30 @@
 import {
   Button,
+  Col,
+  Drawer,
+  InputNumber,
   Modal,
   Row,
+  Space,
   Table,
   Tree,
   TreeProps,
 } from 'antd';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 import { plotTypeList, plotExpRel } from '../../py/plot.config';
 
 import { projectItemType } from 'defines';
+import { FolderOpenOutlined } from '@ant-design/icons';
 
 export default function project(props: any) {
   const [selectedRowKeys, setSelectedRowKeys] = useState([] as React.Key[]);
   const [selectedRow, setSelectedRow] = useState([] as any[]);
   const [selectedPlotKeys, setSelectedPlotKeys] = useState([] as any[]);
   const [visible, setVisible] = useState(false);
+  const [logHeight, setLogHeight] = useState(0);
+  const [col, setCol] = useState(1);
+  const [row, setRow] = useState(1);
 
   const onSelectChange = (
     selectedRowKeys: any[],
@@ -40,9 +48,17 @@ export default function project(props: any) {
   const checkSelected = (record: projectItemType) => {
     return selectedRowKeys.indexOf(createRowKeys(record)) != -1;
   };
+  const validProjectList = props.projectList.filter(
+    (item: projectItemType) => item.status1 == 0 && item.status2 == 0
+  );
   let deviceList = new Set<string>();
   let dateList = new Set<string>();
   let serverPathList = new Set<string>();
+  // validProjectList.forEach((item: any) => {
+  //   deviceList.add(item.deviceId);
+  //   dateList.add(item.date);
+  //   serverPathList.add(item.serverPath);
+  // });
   props.projectList.forEach((item: any) => {
     deviceList.add(item.deviceId);
     dateList.add(item.date);
@@ -50,6 +66,12 @@ export default function project(props: any) {
   });
 
   const columns = [
+    {
+      title: 'trace ID',
+      dataIndex: 'trace',
+      key: 'trace',
+      render: (id: number) => id.toString(),
+    },
     {
       title: '日期',
       dataIndex: 'date',
@@ -63,6 +85,14 @@ export default function project(props: any) {
       onFilter: (value: any, record: projectItemType) =>
         checkSelected(record) || record.date.indexOf(value) === 0,
       sorter: (a: any, b: any) => (a.date > b.date ? 1 : -1),
+    },
+    {
+      title: '时间',
+      dataIndex: 'time',
+      key: 'time',
+      render: (str: string) => {
+        return str.slice(0,2)+':'+str.slice(2,4)+':'+str.slice(4,6);
+      },
     },
     {
       title: '设备id',
@@ -116,6 +146,40 @@ export default function project(props: any) {
       onFilter: (value: any, record: projectItemType) =>
         checkSelected(record) || record.rat.indexOf(value) === 0,
     },
+    {
+      title: '设备数据同步状态',
+      dataIndex: 'status1',
+      key: 'status1',
+      render: (status: number) => {
+        switch (status) {
+          case 0:
+            return <span>同步完成</span>;
+          case 1:
+            return <span>未同步数据</span>;
+          case -1:
+            return <span>同步中</span>;
+          default:
+            return <span>异常状态</span>;
+        }
+      },
+    },
+    {
+      title: '服务器同步状态',
+      dataIndex: 'status2',
+      key: 'status2',
+      render: (status: number) => {
+        switch (status) {
+          case 0:
+            return <span>同步完成</span>;
+          case 1:
+            return <span>未同步数据</span>;
+          case -1:
+            return <span>同步中</span>;
+          default:
+            return <span>异常状态</span>;
+        }
+      },
+    },
   ];
 
   const rowSelection = {
@@ -141,9 +205,14 @@ export default function project(props: any) {
       })
       .filter((item) => item.plotKeys.length > 0);
     console.log(plotRequest);
-    window.jsBridge.invoke('parsePlotRequestMain', plotRequest, () => {
-      setVisible(false);
-    });
+    setLogHeight(400);
+    window.jsBridge.invoke(
+      'parsePlotRequestTotal',
+      { row: row, col: col, data: plotRequest },
+      () => {
+        setVisible(false);
+      }
+    );
   };
   let plotTypeListShowed = plotTypeList;
   for (let i = 0; i < plotTypeList[1].children.length; ++i) {
@@ -162,43 +231,128 @@ export default function project(props: any) {
       plotTypeListShowed[0].children[i].disabled = true;
     } else plotTypeListShowed[0].children[i].disabled = false;
   }
-  return (
-    <>
-      <Row>
-        <Table
-          rowKey={(record) => createRowKeys(record)}
-          rowSelection={rowSelection}
-          columns={columns}
-          dataSource={props.projectList}
-          pagination={{ pageSize: 10 }}
-          footer={() => (
-            <Button
-              type="primary"
-              onClick={() => {
-                setVisible(true);
-              }}
-            >
-              绘制统计图
-            </Button>
-          )}
-        />
-      </Row>
-      <Modal
-        title="Basic Modal"
-        visible={visible}
-        onCancel={() => {
-          setVisible(false);
+  const container = useRef<HTMLDivElement | null>(null);
+
+  const createLog = () => {
+    if (container.current) {
+      if (container.current.parentNode) {
+        const pNode = container.current.parentNode as HTMLDivElement;
+
+        pNode.scrollTop = pNode.scrollHeight - pNode.clientHeight;
+      }
+    }
+    return props.logList.map((item: string) => {
+      return <p>{item}</p>;
+    });
+  };
+  if (props.path === '')
+    return (
+      <Row
+        justify="center"
+        align="middle"
+        style={{
+          minHeight: '100vh',
         }}
-        onOk={handleOk}
-        destroyOnClose
       >
-        <Tree
-          checkable
-          onCheck={onCheck}
-          selectable={false}
-          treeData={plotTypeListShowed}
-        />
-      </Modal>
-    </>
-  );
+        <Col>
+          <Button
+            type="primary"
+            size="large"
+            icon={<FolderOpenOutlined />}
+            onClick={props.openProject}
+          >
+            打开项目文件夹
+          </Button>
+        </Col>
+      </Row>
+    );
+  else
+    return (
+      <>
+        <Row justify="center">
+          <Col span={20}>
+            <Table
+              rowKey={(record) => createRowKeys(record)}
+              rowSelection={rowSelection}
+              columns={columns}
+              dataSource={props.projectList}
+              pagination={{ pageSize: 10 }}
+              footer={() => (
+                <Space>
+                  <Button type="primary"  disabled={selectedRowKeys.length == 0} onClick={props.getProjectData}>
+                    同步
+                  </Button>
+                  <Button
+                    type="primary"
+                    disabled={selectedRowKeys.length == 0||selectedRow.filter((item)=>(item.status1!=0)||(item.status2!=0)).length>0}
+                    onClick={() => {
+                      setVisible(true);
+                    }}
+                  >
+                    绘制统计图
+                  </Button>
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      props.startSimu(selectedRow[0]);
+                    }}
+                    disabled={selectedRowKeys.length != 1}
+                  >
+                    复现数据
+                  </Button>
+                </Space>
+              )}
+            />
+          </Col>
+          <Drawer
+            title="日志"
+            placement="bottom"
+            onClose={() => {
+              setLogHeight(0);
+            }}
+            visible={logHeight > 0}
+            height={logHeight}
+            maskClosable={false}
+            getContainer={false}
+            style={{ position: 'absolute' }}
+          >
+            <div ref={container}>{createLog()}</div>
+          </Drawer>
+        </Row>
+        <Modal
+          title="分析类型选择"
+          visible={visible}
+          onCancel={() => {
+            setVisible(false);
+          }}
+          onOk={handleOk}
+          destroyOnClose
+        >
+          <Tree
+            checkable
+            onCheck={onCheck}
+            selectable={false}
+            treeData={plotTypeListShowed}
+          />
+          行数
+          <InputNumber
+            min={1}
+            max={3}
+            defaultValue={1}
+            onChange={(value: number) => {
+              setRow(value);
+            }}
+          ></InputNumber>
+          列数
+          <InputNumber
+            min={1}
+            max={3}
+            defaultValue={1}
+            onChange={(value: number) => {
+              setCol(value);
+            }}
+          ></InputNumber>
+        </Modal>
+      </>
+    );
 }

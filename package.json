@@ -228,10 +228,14 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
+    "@ant-design/charts": "^1.3.6",
     "@ant-design/icons": "^4.7.0",
+    "@antv/data-set": "^0.11.8",
     "@devicefarmer/adbkit": "^3.2.1",
     "@types/react-slick": "^0.23.8",
     "antd": "^4.18.9",
+    "apexcharts": "^3.35.4",
+    "bizcharts": "^4.1.19",
     "bluebird": "^3.7.2",
     "carousel": "^0.0.3",
     "echarts": "^5.3.0",
@@ -245,6 +249,7 @@
     "node-sass": "^7.0.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-infinite-scroll-component": "^6.1.0",
     "react-router-dom": "^6.2.1",
     "react-slick": "^0.29.0",
     "slick": "^1.12.2",
