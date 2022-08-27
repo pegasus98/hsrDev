@@ -25,7 +25,6 @@ let projectPath = '';
 const client = Adb.createClient();
 const mkdirsSync = (dirname: string) => {
   if (!fs.existsSync(dirname)) {
-    console.log(path.dirname(dirname))
     mkdirsSync(path.dirname(dirname));
     fs.mkdirSync(dirname);
   }
@@ -58,7 +57,6 @@ const listDevicesMain = async () => {
   try {
     await client.listDevices().then(function (devices: any) {
       return Promise.map(devices, function (device: any) {
-        console.log(device);
         if (device.type !== 'offline')
           return client
             .getDevice(device.id)
@@ -415,9 +413,9 @@ const runVideo = (
   videoProcess.stderr.on('data', (data) => {
     console.error(`stderror:${iconvLite.decode(data, 'cp936')}`);
   });
-  videoProcess.stdout.on('data', (data) => {
-    console.log(`stderror:${iconvLite.decode(data, 'cp936')}`);
-  });
+  // videoProcess.stdout.on('data', (data) => {
+  //   console.log(`stdout:${iconvLite.decode(data, 'cp936')}`);
+  // });
   videoProcess.on('exit', (code: number) => {
     console.log(code)
     if (bat) {
@@ -435,7 +433,7 @@ const runVideo = (
     'shell',
     'bash',
     '/home/android/android.sh',
-    newExpType,
+    "listen",
     serverIp,
     dateString,
     timeDur.toString(),
@@ -447,7 +445,7 @@ const runVideo = (
   //   console.log(`stdout:${iconvLite.decode(data, 'cp936')}`);
   // });
   var interval = setInterval(() => {
-    const targetPath = `${fullPath}\\${cnt}.video`;
+    const targetPath = `${fullPath}\\log.video`;
     runExec(expType, rat, deviceId, dateString, serverIp, 100);
     if (fs.existsSync(targetPath)) {
       resolveVideo(targetPath, deviceId);
@@ -489,7 +487,7 @@ const resolveVideo = (path: any, deviceId: string) => {
     },
     (res) => {
       res.on('data', (d) => {
-        console.log(data)
+        console.log(d)
       });
     }
   );
@@ -502,7 +500,7 @@ const resolveVideo = (path: any, deviceId: string) => {
 
 const resolveData = (path: any, status: number, deviceId: string) => {
   let pathToCsv = JSON.parse(path.toString());
-  console.log(pathToCsv);
+  console.log(pathToCsv)
   let snrResult = [] as snrLineDataItem[];
   let rsrpResult = [] as DetailLineDataItem[];
   let thpResult = [] as DetailLineDataItem[];
@@ -629,9 +627,9 @@ const startSingleExp = (
   bat.stderr.on('data', (data) => {
     console.error(`stderror:${iconvLite.decode(data, 'cp936')}`);
   });
-  // bat.stdout.on('data', (data) => {
-  //   console.log(`stdout:${iconvLite.decode(data, 'cp936')}`);
-  // });
+  bat.stdout.on('data', (data) => {
+    console.log(`stdout:${iconvLite.decode(data, 'cp936')}`);
+  });
   var interval = setInterval(() => {
     cnt++;
     runExec(expType, rat, deviceId, dateString, serverIp, timeDur - cnt);
@@ -640,6 +638,7 @@ const startSingleExp = (
 
   bat.on('exit', (code: number) => {
     // clearInterval(interval);
+    console.log("exp exited ")
     if (code > 0)
       console.log('exp error, code:', code, expType, serverIp, dateString);
 
@@ -1022,7 +1021,6 @@ const remoteServerRequest = (formData: {
 };
 
 const parsePlotRequestMain = (plotRequest: any[]) => {
-  // console.log(plotRequest);
   plotRequest.map((req: any) => {
     remoteServerRequest(req);
   });

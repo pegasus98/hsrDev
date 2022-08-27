@@ -12,6 +12,7 @@ import monkey
 import subprocess
 import traceback
 import random
+from filelock import Timeout, FileLock
 
 webdriver.common.service.Service.start = monkey.start
 
@@ -72,27 +73,25 @@ def run(url,logpath):
     #         log = { 'msg': 'timeout when playing' }
     #         break
     cnt = 0
+    stamp = datetime.now()
+    log={ 'msg': 'playback running','stamp': stamp, 'url': url,'info':[],'detail':[] }
     while True:
-        stamp = datetime.now()
-        print("running")
-        stampstr = stamp.strftime('%Y-%m-%dT%H:%M:%S').replace(":","")
-        with open(f'{logpath}\\{cnt}.video', 'w') as log_file:
-            if(video.get_property('ended')==True):
-                log={ 'msg': 'playback completed','stamp': stamp, 'url': url }
-                log['info'] = driver.get_log('browser')
-                log['detail'] = driver.get_log('performance')
-                pprint(log, log_file)
-                break
-            else:
-                log={ 'msg': 'playback running','stamp': stamp, 'url': url }
-                log['info'] = driver.get_log('browser')
-                log['detail'] = driver.get_log('performance')
-                pprint(log, log_file)
+        #stampstr = stamp.strftime('%Y-%m-%dT%H:%M:%S').replace(":","")
+        filepath=f'{logpath}\\log.video'
+        lock = FileLock(filepath+".lock", timeout=1)
+        with lock:
+            with open(filepath, 'w') as log_file:
+                log['info'].extend(driver.get_log('browser'))
+                log['detail'].extend(driver.get_log('performance'))
+                if(video.get_property('ended')==True):
+                    log['msg']='playback completed'
+                    pprint(log, log_file)
+                    break
+                else:
+                    log['msg']='playback running'
+                    pprint(log, log_file)
         cnt+=1
         sleep(1)
-
-    log['info'] = driver.get_log('browser')
-    log['detail'] = driver.get_log('performance')
     return log
 
 def main(device,logpath):
