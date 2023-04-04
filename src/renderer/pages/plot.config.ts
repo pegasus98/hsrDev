@@ -48,7 +48,7 @@ export const plotTypeList= [
         key:'multiExp',
         children:[
             {
-                title: '吞吐量',
+                title: 'Throughput',
                 key: 'throughput',
                 disabled:false
             },

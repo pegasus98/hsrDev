@@ -74,21 +74,21 @@ def run(url,logpath):
     #         break
     cnt = 0
     stamp = datetime.now()
-    log={ 'msg': 'playback running','stamp': stamp, 'url': url,'info':[],'detail':[] }
+    log={ 'stamp': stamp, 'url': url,'info':[],'detail':[] }
     while True:
         #stampstr = stamp.strftime('%Y-%m-%dT%H:%M:%S').replace(":","")
         filepath=f'{logpath}\\log.video'
-        lock = FileLock(filepath+".lock", timeout=1)
+        lock = FileLock(filepath+".lock", timeout=10    )
         with lock:
             with open(filepath, 'w') as log_file:
                 log['info'].extend(driver.get_log('browser'))
                 log['detail'].extend(driver.get_log('performance'))
                 if(video.get_property('ended')==True):
-                    log['msg']='playback completed'
+                    log['finished']=True
                     pprint(log, log_file)
                     break
                 else:
-                    log['msg']='playback running'
+                    log['finished']=False
                     pprint(log, log_file)
         cnt+=1
         sleep(1)

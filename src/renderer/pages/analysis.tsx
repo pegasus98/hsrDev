@@ -16,8 +16,10 @@ import { plotTypeList, plotExpRel } from '../../py/plot.config';
 
 import { projectItemType } from 'defines';
 import { FolderOpenOutlined } from '@ant-design/icons';
-
+import { useTranslation } from 'react-i18next';
+import 'config/i18next.config.render';
 export default function project(props: any) {
+  const {t}=useTranslation()
   const [selectedRowKeys, setSelectedRowKeys] = useState([] as React.Key[]);
   const [selectedRow, setSelectedRow] = useState([] as any[]);
   const [selectedPlotKeys, setSelectedPlotKeys] = useState([] as any[]);
@@ -67,13 +69,13 @@ export default function project(props: any) {
 
   const columns = [
     {
-      title: 'trace ID',
+      title: t('trace')+' ID',
       dataIndex: 'trace',
       key: 'trace',
       render: (id: number) => id.toString(),
     },
     {
-      title: '日期',
+      title: t('date'),
       dataIndex: 'date',
       key: 'date',
       filterMultiple: true,
@@ -87,7 +89,7 @@ export default function project(props: any) {
       sorter: (a: any, b: any) => (a.date > b.date ? 1 : -1),
     },
     {
-      title: '时间',
+      title: t('time'),
       dataIndex: 'time',
       key: 'time',
       render: (str: string) => {
@@ -95,7 +97,7 @@ export default function project(props: any) {
       },
     },
     {
-      title: '设备id',
+      title: t('device')+' ID',
       dataIndex: 'deviceId',
       key: 'deviceId',
       filterMultiple: true,
@@ -109,7 +111,7 @@ export default function project(props: any) {
       sorter: (a: any, b: any) => (a.deviceId > b.deviceId ? 1 : -1),
     },
     {
-      title: '服务器地址',
+      title: t('server')+' IP',
       dataIndex: 'serverPath',
       key: 'serverPath',
       filters: [
@@ -122,7 +124,7 @@ export default function project(props: any) {
       sorter: (a: any, b: any) => (a.serverPath > b.serverPath ? 1 : -1),
     },
     {
-      title: '实验类型',
+      title: t('experimentType'),
       dataIndex: 'expType',
       key: 'expType',
       filters: [
@@ -135,7 +137,7 @@ export default function project(props: any) {
         checkSelected(record) || record.expType.indexOf(value) === 0,
     },
     {
-      title: '网络类型',
+      title: t('rat'),
       dataIndex: 'rat',
       key: 'rat',
       filters: [
@@ -147,36 +149,36 @@ export default function project(props: any) {
         checkSelected(record) || record.rat.indexOf(value) === 0,
     },
     {
-      title: '设备数据同步状态',
+      title: t('dSynStatus'),
       dataIndex: 'status1',
       key: 'status1',
       render: (status: number) => {
         switch (status) {
           case 0:
-            return <span>同步完成</span>;
+            return <span>{t('finish')}</span>;
           case 1:
-            return <span>未同步数据</span>;
+            return <span>{t('notFinished')}</span>;
           case -1:
-            return <span>同步中</span>;
+            return <span>{t('synchronizing')}</span>;
           default:
-            return <span>异常状态</span>;
+            return <span>{t('error')}</span>;
         }
       },
     },
     {
-      title: '服务器同步状态',
+      title: t('sSynStatus'),
       dataIndex: 'status2',
       key: 'status2',
       render: (status: number) => {
         switch (status) {
           case 0:
-            return <span>同步完成</span>;
+            return <span>{t('finish')}</span>;
           case 1:
-            return <span>未同步数据</span>;
+            return <span>{t('notFinished')}</span>;
           case -1:
-            return <span>同步中</span>;
+            return <span>{t('synchronizing')}</span>;
           default:
-            return <span>异常状态</span>;
+            return <span>{t('error')}</span>;
         }
       },
     },
@@ -261,7 +263,7 @@ export default function project(props: any) {
             icon={<FolderOpenOutlined />}
             onClick={props.openProject}
           >
-            打开项目文件夹
+            {t('openPorjectFolder')}
           </Button>
         </Col>
       </Row>
@@ -280,7 +282,7 @@ export default function project(props: any) {
               footer={() => (
                 <Space>
                   <Button type="primary"  disabled={selectedRowKeys.length == 0} onClick={props.getProjectData}>
-                    同步
+                    {t("synchronize")}
                   </Button>
                   <Button
                     type="primary"
@@ -289,7 +291,7 @@ export default function project(props: any) {
                       setVisible(true);
                     }}
                   >
-                    绘制统计图
+                    {t("draw")}
                   </Button>
                   <Button
                     type="primary"
@@ -298,7 +300,7 @@ export default function project(props: any) {
                     }}
                     disabled={selectedRowKeys.length != 1}
                   >
-                    复现数据
+                    {t("replay")}
                   </Button>
                 </Space>
               )}

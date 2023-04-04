@@ -89,6 +89,28 @@ const configuration: webpack.Configuration = {
         use: ['style-loader', 'css-loader', 'sass-loader'],
         exclude: /\.module\.s?(c|a)ss$/,
       },
+      {
+        test: /\.less$/,
+        use: [{
+          loader: 'style-loader',
+        }, {
+          loader: 'css-loader', // translates CSS into CommonJS
+        }, {
+          loader: 'less-loader', // compiles Less to CSS
+         options: {
+           lessOptions: { // 如果使用less-loader@5，请移除 lessOptions 这一级直接配置选项。
+             modifyVars: {
+               'font-size-base': '16px',
+               'font-family': `Arial, SimSun, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+  'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+  'Noto Color Emoji'`
+             },
+             javascriptEnabled: true,
+           },
+         },
+        }],
+        // ...other rules
+      },
       // Fonts
       {
         test: /\.(woff|woff2|eot|ttf|otf)$/i,

@@ -12,9 +12,10 @@ import {
   ConfigProvider,
 } from 'antd';
 import { serverInfoItem } from 'defines';
-
+import { useTranslation } from 'react-i18next';
 
 export default function config(props: any) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [form] = Form.useForm();
   // console.log(props.serverList)
@@ -32,7 +33,7 @@ export default function config(props: any) {
   const customizeRenderEmpty = () => (
     //这里面就是我们自己定义的空状态
     <div style={{ textAlign: 'center' }}>
-      <p>无可用服务器</p>
+      <p>{t('noServer')}</p>
     </div>
   );
   return (
@@ -44,15 +45,35 @@ export default function config(props: any) {
             return [record.ip, record.status].join('-');
           }}
           columns={[
-            { title: '服务器ip', dataIndex: 'ip', key: 'ip' },
-            { title: '用户名', dataIndex: 'username', key: 'username' },
+            { title: t('server') + ' IP', dataIndex: 'ip', key: 'ip' },
+            { title: t('username'), dataIndex: 'username', key: 'username' },
             {
-              title: '状态',
+              title: t('status'),
               dataIndex: 'status',
               key: 'status',
+              render: (status: number) => {
+                let word = '';
+                switch (status) {
+                  case 0:
+                    word = t('error');
+                    break;
+                  case 1:
+                    word = t('ready');
+                    break;
+                  case 2:
+                    word = t('checking');
+                    break;
+                  case 2:
+                    word = t('notChecked');
+                    break;
+                  default:
+                    break;
+                }
+                return <span>{word}</span>;
+              },
             },
             {
-              title: '操作',
+              title: t('operation'),
               dataIndex: 'ip',
               key: 'action',
               render: (ip: string) => {
@@ -62,14 +83,14 @@ export default function config(props: any) {
                       props.deleteServer(ip);
                     }}
                   >
-                    删除
+                    {t('delete')}
                   </a>
                 );
               },
             },
           ]}
           dataSource={props.serverList}
-          title={() => '服务器列表'}
+          title={() => t('serverList')}
           footer={() => (
             <Row>
               <Col span={12}>
@@ -80,7 +101,7 @@ export default function config(props: any) {
                   }}
                 >
                   <span className="icon icon-text icon-arrows-ccw"></span>
-                  添加服务器
+                  {t('addServer')}
                 </Button>
               </Col>
               <Col span={12}>
@@ -91,7 +112,7 @@ export default function config(props: any) {
                   }}
                 >
                   <span className="icon icon-text icon-arrows-ccw"></span>
-                  启动服务端
+                  {t('startServer')}
                 </Button>
               </Col>
             </Row>
@@ -106,7 +127,7 @@ export default function config(props: any) {
         }}
         footer={
           <Button form="serverInput" key="submit" htmlType="submit">
-            添加
+            {t('add')}
           </Button>
         }
         destroyOnClose

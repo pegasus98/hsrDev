@@ -12,7 +12,7 @@ export default function WrapPie(props:any){
         height:250,
         width:300,
         animation:false,
-        legend: false,
+        legend: undefined,
         label: {
           type: 'inner',
           content: '',

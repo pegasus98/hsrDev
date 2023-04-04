@@ -7,7 +7,7 @@ const callbacks = {};
 let channelCallback = [];
 contextBridge.exposeInMainWorld('electron', {
   invoke(bridgeName, data, callback) {
-    // 如果不存在方法名或不为字符串，则提示调用失败
+    // 如果不存在方法名或不为字符串，则提示调用failed 
     if (typeof bridgeName !== 'string') {
       throw new Error('Invoke failed!');
     }
@@ -57,7 +57,12 @@ contextBridge.exposeInMainWorld('electron', {
       'rsrp',
       'duration',
       'onlineData',
-      'getProjectData'
+      'onlineVideo',
+      'getProjectData',
+      'onlineCore',
+      'onlinePcap',
+      'diff',
+      'language-changed'
     ];
     if (validChannels.includes(channel)) {
       //console.log('render on channel',channel)
@@ -74,4 +79,7 @@ contextBridge.exposeInMainWorld('electron', {
   once(channel, func) {
     ipcRenderer.once(channel, (event, ...args) => func(...args));
   },
+  sendSync(channel){
+    return ipcRenderer.sendSync(channel)
+  }
 });

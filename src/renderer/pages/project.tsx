@@ -10,71 +10,74 @@ import {
   Table,
   Upload,
 } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 export default function project(props: any) {
+  const { t } = useTranslation();
+
   const columns = [
     {
-      title:'trace ID',
+      title:t('trace')+' ID',
       dataIndex: 'trace',
       key:'trace',
       render:(id:number)=>id.toString()
     },
     {
-      title: '时间',
+      title: t('time'),
       dataIndex: 'index',
       key: 'index',
     },
     {
-      title: '设备id',
+      title: t('device')+' ID',
       dataIndex: 'deviceId',
       key: 'deviceId',
     },
     {
-      title: '服务器ip',
+      title: t('server')+' IP',
       dataIndex: 'serverPath',
       key: 'serverPath',
     },
     {
-      title: '实验类型',
+      title: t('experimentType'),
       dataIndex: 'expType',
       key: 'expType',
     },
     {
-      title: '网络类型',
+      title: t('rat'),
       dataIndex: 'rat',
       key: 'rat',
     },
     {
-      title: '设备数据同步状态',
+      title: t('dSynStatus'),
       dataIndex: 'status1',
       key: 'status1',
       render: (status: number) => {
         switch (status) {
           case 0:
-            return <span>同步完成</span>;
+            return <span>{t('finish')}</span>;
           case 1:
-            return <span>未同步数据</span>;
+            return <span>{t('notFinished')}</span>;
           case -1:
-            return <span>同步中</span>;
+            return <span>{t('synchronizing')}</span>;
           default:
-            return <span>异常状态</span>;
+            return <span>{t('error')}</span>;
         }
       },
     },
     {
-      title: '服务器同步状态',
+      title: t('sSynStatus'),
       dataIndex: 'status2',
       key: 'status2',
       render: (status: number) => {
         switch (status) {
           case 0:
-            return <span>同步完成</span>;
+            return <span>{t('finish')}</span>;
           case 1:
-            return <span>未同步数据</span>;
+            return <span>{t('notFinished')}</span>;
           case -1:
-            return <span>同步中</span>;
+            return <span>{t('synchronizing')}</span>;
           default:
-            return <span>异常状态</span>;
+            return <span>{t('error')}</span>;
         }
       },
     },
@@ -92,7 +95,7 @@ export default function project(props: any) {
       >
         <Col>
           <Button type="primary" size="large" icon={<FolderOpenOutlined /> }onClick={props.openProject}>
-            打开项目文件夹
+            t{'openProjectFolder'}
           </Button>
         </Col>
       </Row>
@@ -116,7 +119,7 @@ export default function project(props: any) {
             pagination={{ pageSize: 10 }}
             footer={() => (
               <Button type="primary" onClick={props.getProjectData}>
-                同步
+                {t('synchronize')}
               </Button>
             )}
           />

@@ -7,7 +7,7 @@ source config.sh
 TIME_DUR=$4
 SERVER_IP=$2
 SERVER=root@$SERVER_IP
-
+echo $TIME_DUR
 
 if [[ `id -u` -ne 0 ]] ; then
   echo This script can only be executed by root.
@@ -28,7 +28,7 @@ if [[ "$1" == "getip" ]] ; then
   curl https://icanhazip.com/
   exit
 fi
-
+echo "befor netif"
 NETIF=`ip route show | grep -oh -m 1 "rmnet_data[0-9]"`
 if [[ -z "$NETIF" ]] ; then
   echo Missing rmnet_data, fallback to wlan...
@@ -41,8 +41,10 @@ fi
 echo NETIF: $NETIF
 
 run_bbr() {
-  $IPERF3 -R -t $TIME_DUR -c $SERVER_IP -p $BBR_PORT -T speedmsg &
-  sleep $((TIME_DUR+5))
+  #$IPERF3 -R -t $TIME_DUR -c $SERVER_IP -p $BBR_PORT -T speedmsg &
+  $XPERF_CLIENT -d $LOG_DIR -p $BBR_PORT $SERVER_IP &  
+  sleep $((TIME_DUR+3))
+  echo "kill bbr" 
   kill $! || true
   wait $! || true
 }
@@ -53,7 +55,7 @@ prepare_bbr() {
 
 run_udp() {
   $IPERF3 -R -t $TIME_DUR -c $SERVER_IP -p $UDP_PORT -u -b `cat UDP-BITRATE` &
-  sleep $((TIME_DUR+5))
+  sleep $((TIME_DUR+3))
   kill $! || true
   wait $! || true
 }
@@ -63,8 +65,8 @@ prepare_udp() {
 }
 
 run_quic() {
-  $QUIC_CLIENT -s $SERVER_IP:$QUIC_PORT -p 10000000000:0 -g -j &
-  sleep $((TIME_DUR+5))
+  $QUIC_CLIENT -s $SERVER_IP:$QUIC_PORT -p 10000000000:0 -g -j -d $LOG_DIR  &
+  sleep $((TIME_DUR+3))
   kill $! || true
   wait $! || true
 }
@@ -92,6 +94,13 @@ prepare_http() {
   true
 }
 
+prepare_listen(){
+  sleep 1
+}
+
+run_listen(){
+  sleep 120
+}
 DATE=$3
 LOG_DIR=logs/$DATE
 mkdir -p $LOG_DIR
@@ -109,12 +118,12 @@ pkill tcpdump || true
 pkill diag || true
 prepare_$1
 
-tcpdump -i $NETIF -s 96 -G 1 -w $LOG_DIR/pcap/%Y_%m%d_%H%M_%S.pcap &
+tcpdump -i $NETIF -s 96 -w $LOG_DIR/l3.pcap host $SERVER_IP &
 diag_logcat/diag_logcat diag_logcat/Diag-5G.cfg $LOG_DIR/l2 $LOG_DIR/l2 &
 
-sleep 2
+sleep 1
 run_$1 | tee $LOG_DIR/$1
-sleep 2
-
+sleep 1
+echo "kill start"
 pkill tcpdump || true
 pkill diag || true

@@ -3,16 +3,19 @@ import { Link } from 'react-router-dom';
 import { Menu } from 'antd';
 import menuList from './menus.config';
 import styles from './index.module.css';
+import { WithTranslation,withTranslation } from 'react-i18next';
 
 type Props = {
   rightLevel:number
 }
-class MenuView extends PureComponent<Props> {
+class MenuView extends PureComponent<WithTranslation,any> {
+
   static defaultProps = {
     mode: 'inline',
     rightLevel:0
   };
   renderMenu = (list: any[]) => {
+    const {t}= this.props
     const mode = 'inline';
     return list.map((item) => {
       if(this.props.rightLevel<item.level)
@@ -24,7 +27,7 @@ class MenuView extends PureComponent<Props> {
           <Menu.SubMenu
             key={name}
             title={
-              <span>{mode === 'inline' ? <span>{name}</span> : null}</span>
+              <span>{mode === 'inline' ? <span>{t(name)}</span> : null}</span>
             }
           >
             {subMenu}
@@ -34,7 +37,7 @@ class MenuView extends PureComponent<Props> {
         return (
           <Menu.Item key={path}>
             <Link to={path}>
-              <span>{name}</span>
+              <span>{t(name)}</span>
             </Link>
           </Menu.Item>
         );
@@ -42,6 +45,7 @@ class MenuView extends PureComponent<Props> {
     });
   };
   render() {
+
     return (
       <Menu
         defaultSelectedKeys={['/']}

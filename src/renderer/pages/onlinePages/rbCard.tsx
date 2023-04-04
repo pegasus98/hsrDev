@@ -1,12 +1,13 @@
 import { QuestionCircleOutlined } from '@ant-design/icons';
-import { Card, Row, Col, Layout, Popover, Space, Divider } from 'antd';
+import { Card, Row, Col, Layout, Popover, Space, Divider, Switch } from 'antd';
 import { DetailLineDataItem } from 'defines';
 import { Box } from '@ant-design/plots';
 import NotedLine from '../notedLine';
 import WrapPie from '../wrapPie';
 import { Chart, Axis, Tooltip, Schema } from 'bizcharts';
 import DataSet from '@antv/data-set';
-import styles from "../pages.module.css"
+import styles from '../pages.module.css';
+import { useState } from 'react';
 const { DataView } = DataSet;
 const analysisData = (type: string, data: DetailLineDataItem[]) => {
   let sum = 0;
@@ -17,11 +18,11 @@ const analysisData = (type: string, data: DetailLineDataItem[]) => {
     return {
       average: 0,
       pieData: [
-        { type: '极差', value: types[0] },
-        { type: '较差', value: types[1] },
-        { type: '中等', value: types[2] },
-        { type: '优秀', value: types[3] },
-        { type: '良好', value: types[4] },
+        { type: 'poor', value: types[0] },
+        { type: 'Fair', value: types[1] },
+        { type: 'Average', value: types[2] },
+        { type: 'Good', value: types[3] },
+        { type: 'Excellent', value: types[4] },
       ],
       v0: 0,
       v25: 0,
@@ -30,12 +31,14 @@ const analysisData = (type: string, data: DetailLineDataItem[]) => {
       v100: 0,
     };
   }
+  //const sorteddata=data.sort((a,b)=>(b.value-a.value)) //大到小  thp最大值未知
   const sorteddata = data.concat([]);
   sorteddata.sort((a, b) => b.value - a.value);
   if (type === 'rsrp') board = [-100000, -105, -95, -85, -75];
   if (type === 'snr') board = [-10000, -5, 5, 15, 25];
   if (type === 'throughput') board = [-10000, 1, 5, 20, 50];
-  for (let i = 1; i < sorteddata.length; i++) {
+  if (type === 'rb') board = [-100, 20, 40, 60, 80];
+  for (let i = 0; i < sorteddata.length; i++) {
     sum += sorteddata[i].value;
     while (board[pointer] > sorteddata[i].value) pointer--;
     types[pointer]++;
@@ -44,11 +47,11 @@ const analysisData = (type: string, data: DetailLineDataItem[]) => {
   return {
     average: sum / data.length,
     pieData: [
-      { type: '极差', value: types[0] },
-      { type: '较差', value: types[1] },
-      { type: '中等', value: types[2] },
-      { type: '优秀', value: types[3] },
-      { type: '良好', value: types[4] },
+      { type: 'poor', value: types[0] },
+      { type: 'Fair', value: types[1] },
+      { type: 'Average', value: types[2] },
+      { type: 'Good', value: types[3] },
+      { type: 'Excellent', value: types[4] },
     ],
     v100: sorteddata[0].value.toFixed(1),
     v75: sorteddata[Math.floor(sorteddata.length / 4)].value.toFixed(1),
@@ -58,16 +61,101 @@ const analysisData = (type: string, data: DetailLineDataItem[]) => {
   };
 };
 
-export default function VideoCard(props: any) {
+const renderHelperText = (type: string) => {
+  const SNRText = (
+    <div>
+      5类状态定义为:
+      <br />
+      Excellent: SNR大于25dB
+      <br />
+      Good: SNR小于25dB大于15dB
+      <br />
+      Average: SNR小于15dB大于5dB
+      <br />
+      Fair: SNR小于5dB大于-5dB
+      <br />
+      poor: SNR小于-5dB
+    </div>
+  );
+  const RSRPText = (
+    <div>
+      5类状态定义为：
+      <br />
+      Excellent: RSRP大于-75dB
+      <br />
+      Good: RSRP小于-75dB大于-85dB
+      <br />
+      Average: RSRP小于-85dB大于-95dB
+      <br />
+      Fair: RSRP小于-95dB大于-105dB
+      <br />
+      poor: RSRP小于-105dB
+    </div>
+  );
+  const ThroughputText = (
+    <div>
+      5类状态定义为：
+      <br />
+      Excellent: Throughput大于50Mbps
+      <br />
+      Good: Throughput小于50Mbps大于20Mbps
+      <br />
+      Average: Throughput小于20Mbps大于5Mbps
+      <br />
+      Fair: Throughput小于5Mbps大于1Mbps
+      <br />
+      poor: Throughput小于1Mpbs
+    </div>
+  );
+  const rbText = (
+    <div>
+      5类状态定义为：
+      <br />
+      Excellent: rbUtil大于80%
+      <br />
+      Good: rbUtil小于80%大于60%
+      <br />
+      Average: rbUtil小于60%大于40%
+      <br />
+      Fair: rbUtil小于40%大于20%
+      <br />
+      poor: rbUtil小于20%
+    </div>
+  );
+  switch (type) {
+    case 'rsrp':
+      return RSRPText;
+    case 'snr':
+      return SNRText;
+    case 'throughput':
+      return ThroughputText;
+    case 'rb':
+      return rbText
+    default:
+      return '';
+  }
+};
+
+export default function DisplayCard(props: any) {
+  const [range, setRange] = useState([0, 1]);
+  const [ifWindow, setIfWindow] = useState(false);
+
+  let start = 0;
+  let end = props.data.length;
+  if (ifWindow) {
+    if (props.status === 0) {
+      start = Math.floor(props.data.length * range[0]);
+      end = Math.ceil(props.data.length * range[1]);
+    } else {
+      start = props.data.length - 100;
+      end = props.data.length;
+    }
+  }
+  const data = props.data.slice(start, end);
   const { average, pieData, v0, v25, v50, v75, v100 } = analysisData(
     props.type,
-    props.bufferData
+    data
   );
-  let pieSum = 0;
-  props.data.forEach((item: any) => {
-    pieSum += item.value;
-  });
-
   const data2 = [
     {
       x: 'Oceania',
@@ -107,11 +195,11 @@ export default function VideoCard(props: any) {
                         <span style={{ backgroundColor: '#ccff99' }}>
                           绿色区间
                         </span>
-                        为成功handover，
+                        为successful handover，
                         <span style={{ backgroundColor: '#ff9999' }}>
                           红色区间
                         </span>
-                        为失败handover
+                        为failed handover
                       </div>
                     }
                   >
@@ -123,24 +211,28 @@ export default function VideoCard(props: any) {
               <NotedLine
                 data={props.data}
                 notes={props.notes}
+                changeFunc={setRange}
                 extraConfig={props.extraConfig}
-                title={props.title} 
+                title={props.title}
                 status={props.status}
-
               ></NotedLine>
             </Card>
           </Col>
         </Row>
         <Row justify="center" align="top">
-          {/* <Col span={14} style={{height:'100%'}}>
-            <Divider orientation="left">分位值</Divider>
+          <Col span={14} style={{ height: '100%' }}>
+            <Row>
+              <Col span={20}>
+                <Divider orientation="left">Quantile</Divider>
+              </Col>
+            </Row>
             <Row gutter={10}>
-              <Col span={24 / 6} >
+              <Col span={24 / 6}>
                 <Card
                   bodyStyle={{ color: '#8B0012' }}
                   style={{ borderColor: '#8B0012' }}
                 >
-                  <p>最小值</p>
+                  <p>Min</p>
                   <p>{v0}</p>
                 </Card>
               </Col>
@@ -148,9 +240,8 @@ export default function VideoCard(props: any) {
                 <Card
                   bodyStyle={{ color: '#8B0012' }}
                   style={{ borderColor: '#8B0012' }}
-
                 >
-                  <p                   className={styles.boxText}>25%分位值</p>
+                  <p>25%</p>
                   <p>{v25}</p>
                 </Card>
               </Col>
@@ -159,7 +250,7 @@ export default function VideoCard(props: any) {
                   bodyStyle={{ color: '#8B0012' }}
                   style={{ borderColor: '#8B0012' }}
                 >
-                  <p>中位数</p>
+                  <p>Median</p>
                   <p>{v50}</p>
                 </Card>
               </Col>
@@ -168,7 +259,7 @@ export default function VideoCard(props: any) {
                   bodyStyle={{ color: '#8B0012' }}
                   style={{ borderColor: '#8B0012' }}
                 >
-                  <p>75%分位值</p>
+                  <p>75%</p>
                   <p>{v75}</p>
                 </Card>
               </Col>
@@ -181,8 +272,15 @@ export default function VideoCard(props: any) {
                   <p>{v100}</p>
                 </Card>
               </Col>
+              <Col span={4}>
+                <Switch
+                  checkedChildren="Window"
+                  unCheckedChildren="Global"
+                  onChange={(checked: boolean) => setIfWindow(checked)}
+                />
+              </Col>
             </Row>
-          </Col> */}
+          </Col>
           <Col span={10}>
             <Row>
               <Col span={6} style={{ padding: 20 }}>
@@ -192,42 +290,35 @@ export default function VideoCard(props: any) {
                   bodyStyle={{ color: '#5B9BD5' }}
                   style={{ borderColor: '#5B9BD5', margin: 10 }}
                 >
-                  <p> 优秀</p>
+                  <p> Excellent</p>
                   <p>
-                    {pieSum != 0
-                      ? ((pieData[4].value * 100) / pieSum).toFixed(1)
+                    {data.length != 0
+                      ? ((pieData[4].value * 100) / data.length).toFixed(1)
                       : 0}
-                    % ({pieData[4].value}s){' '}
+                    % <br />({pieData[4].value / 10} s){' '}
                   </p>
                 </Card>{' '}
                 <Card
                   size="small"
-                  bodyStyle={{ color: "#4472C4" }}
-                  style={{ borderColor: "#4472C4", margin: 10 }}
+                  bodyStyle={{ color: '#4472C4' }}
+                  style={{ borderColor: '#4472C4', margin: 10 }}
                 >
-                  <p>良好</p>
+                  <p>Good</p>
                   <p>
-                    {pieSum != 0
-                      ? ((pieData[3].value * 100) / pieSum).toFixed(1)
+                    {data.length != 0
+                      ? ((pieData[3].value * 100) / data.length).toFixed(1)
                       : 0}
-                    % ({pieData[3].value}s){' '}
+                    % <br /> ({pieData[3].value / 10} s){' '}
                   </p>
                 </Card>
               </Col>
               <Col span={12}>
                 <Card
+                  bordered={false}
                   title={
                     <div>
-                      <text>{props.type}状态分布</text>
-                      <Popover
-                        content={
-                          <div>
-                            5类状态定义为：
-                            <br />
-                            poor:...
-                          </div>
-                        }
-                      >
+                      <span>{props.type} Distribution</span>
+                      <Popover content={renderHelperText(props.type)}>
                         <QuestionCircleOutlined
                           style={{ marginLeft: '10px' }}
                         />
@@ -239,18 +330,17 @@ export default function VideoCard(props: any) {
                 </Card>
               </Col>
               <Col span={6}>
-                {' '}
                 <Card
                   size="small"
                   bodyStyle={{ color: '#FFC000' }}
                   style={{ borderColor: '#FFC000', margin: 10 }}
                 >
-                  <p>中等</p>
+                  <p>Average</p>
                   <p>
-                    {pieSum != 0
-                      ? ((pieData[2].value * 100) / pieSum).toFixed(1)
+                    {data.length != 0
+                      ? ((pieData[2].value * 100) / data.length).toFixed(1)
                       : 0}
-                    % ({pieData[2].value}s){' '}
+                    % <br />({pieData[2].value / 10} s){' '}
                   </p>
                 </Card>{' '}
                 <Card
@@ -258,12 +348,12 @@ export default function VideoCard(props: any) {
                   bodyStyle={{ color: '#ED7D31' }}
                   style={{ borderColor: '#ED7D31', margin: 10 }}
                 >
-                  <p>较差</p>
+                  <p>Fair</p>
                   <p>
-                    {pieSum != 0
-                      ? ((pieData[1].value * 100) / pieSum).toFixed(1)
+                    {data.length != 0
+                      ? ((pieData[1].value * 100) / data.length).toFixed(1)
                       : 0}
-                    % ({pieData[1].value}s){' '}
+                    % <br /> ({pieData[1].value / 10} s){' '}
                   </p>
                 </Card>{' '}
                 <Card
@@ -271,12 +361,12 @@ export default function VideoCard(props: any) {
                   bodyStyle={{ color: '#A5A5A5' }}
                   style={{ borderColor: '#A5A5A5', margin: 10 }}
                 >
-                  <p>极差</p>
+                  <p>poor</p>
                   <p>
-                    {pieSum != 0
-                      ? ((pieData[0].value * 100) / pieSum).toFixed(1)
+                    {data.length != 0
+                      ? ((pieData[0].value * 100) / data.length).toFixed(1)
                       : 0}
-                    % ({pieData[0].value}s){' '}
+                    %<br /> ({pieData[0].value / 10} s){' '}
                   </p>
                 </Card>
               </Col>

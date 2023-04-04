@@ -16,7 +16,7 @@ interface serverInfoItem {
     ip: string;
     username: string;
     password: string;
-    status: string;
+    status: number;
     port: number;
   }
 interface projectItemType {
@@ -67,11 +67,41 @@ interface NumberLineDataItem{
 }
 
 interface HandoverDataItem{
-  start:string;
-  timestamp:number;
+  start:number;
   duration:number
-  end:string;
+  end:number;
   type:number;
+}
+interface DualDataItem{
+  timestamp:number;
+  time:string;
+  first?:number;
+  second?:number;
+}
+interface TagedDataItem{
+  timestamp:number;
+  type:string;
+  value:number;
+}
+
+interface RbDataItem{
+  timestamp:number;
+  type:number;
+  value:number;
+  util:number
+}
+
+interface KernalDataItem{
+  bltBw: number, // bottleneck bandwidth (Mbps)
+  cwnd: number, // congestion window (MiB)
+  minRtt: number, // minimum RTT (ms)
+  stamp: number, // UNIX stamp (ms) in binary data (s)  in frontend
+  time?:string,
+}
+
+interface QAckDataItem{
+  rtt:number,
+  stamp:number,
 }
 export {
   ObjectType,
@@ -85,5 +115,10 @@ export {
   DetailLineDataItem,
   NumberLineDataItem,
   HandoverDataItem,
-  snrLineDataItem
+  snrLineDataItem,
+  KernalDataItem,
+  DualDataItem,
+  TagedDataItem,
+  QAckDataItem,
+  RbDataItem
 };

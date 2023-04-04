@@ -7,7 +7,7 @@ export const plotTypeList= [
         key: 'singleExp',
         children:[
             {
-                title: '吞吐量时序图',
+                title: 'Throughput时序图',
                 key: 'throughput_timeseries',
             }
         ]
@@ -17,7 +17,7 @@ export const plotTypeList= [
         key:'multiExp',
         children:[
             {
-                title: '吞吐量',
+                title: 'Throughput',
                 key: 'throughput',
             },
             {

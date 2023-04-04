@@ -1,25 +1,24 @@
 export default [
     {
-        name:'数据列表',
+        name:'dataList',
         path:'/',
         level:0
     },
     {
-        name: '实验设置',
+        name: 'setting',
         icon: 'home',
         path: '/home',
         level:1,
     },
 
     {
-        icon: 'line-chart',
-        name: '实时数据',
+        name: 'onlineData',
         level:1,
         path:'/statistics',
         // children: [
         //     {
         //         path: '/realtime/throughput',
-        //         name: '吞吐量',
+        //         name: 'Throughput',
         //         level:1,
         //     },
         //     {

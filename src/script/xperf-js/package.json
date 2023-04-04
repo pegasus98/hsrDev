@@ -1,0 +1,30 @@
+{
+  "name": "xperf-js",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "format": "prettier --use-tabs --write *.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lrh2000/xperf-js.git"
+  },
+  "author": "Ruihan Li",
+  "license": "GPL-2.0",
+  "bugs": {
+    "url": "https://github.com/lrh2000/xperf-js/issues"
+  },
+  "homepage": "https://github.com/lrh2000/xperf-js#readme",
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^1.7.2"
+  },
+  "devDependencies": {
+    "jest": "^28.1.3",
+    "jest-matcher-deep-close-to": "^3.0.2",
+    "node-gyp": "^9.1.0",
+    "prettier": "^2.7.1"
+  }
+}

@@ -22,6 +22,9 @@ import { resolveHtmlPath } from './util';
 import apiList from './api';
 import iconvLite from 'iconv-lite';
 import { MessageType } from 'defines';
+
+import i18n from '../config/i18next.config';
+import appConfig from '../config/app.config';
 export default class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -104,9 +107,13 @@ const createWindow = async () => {
     width: 1024,
     height: 728,
     icon: getAssetPath('icon.png'),
-    title: '跨层分析软件',
+    title: '',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      defaultFontFamily:{
+        standard:"SimSun"
+      },
+      defaultFontSize:20
     },
   });
 
@@ -128,7 +135,7 @@ const createWindow = async () => {
   });
 
   const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
+  menuBuilder.buildMenu(i18n);
 
   // Open urls in the user's browser
   mainWindow.webContents.setWindowOpenHandler((edata) => {
@@ -136,6 +143,20 @@ const createWindow = async () => {
     return { action: 'deny' };
   });
 
+
+  i18n.on("load",(load)=>{
+    i18n.changeLanguage('zh');
+    i18n.off('loaded')
+  })
+  i18n.on('languageChanged',(lng)=>{
+    menuBuilder.buildMenu(i18n)
+    mainWindow?.webContents.send('language-changed', {
+      language: lng,
+      namespace: appConfig.namespace,
+      resource: i18n.getResourceBundle(lng, appConfig.namespace)
+    });
+
+  })
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
   //new AppUpdater();

@@ -1,11 +1,10 @@
-import { PureComponent } from 'react';
+import { PureComponent,Component} from 'react';
 import { Layout } from 'antd';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 
 import Menu from './menu';
 import styles from './index.module.css';
 import Home from '../pages/home';
-import Project from '../pages/project';
 import Analysis from '../pages/analysis';
 import {
   expItemType,
@@ -15,11 +14,13 @@ import {
   NumberLineDataItem,
   HandoverDataItem,
   snrLineDataItem,
+  KernalDataItem,
+  RbDataItem,
 } from 'defines';
 
 import moment from 'moment';
 import Statistics from 'renderer/pages/statistics';
-import { windowsStore } from 'process';
+import { WithTranslation,withTranslation } from 'react-i18next';
 const { Sider, Content } = Layout;
 
 declare global {
@@ -27,11 +28,12 @@ declare global {
     jsBridge: any;
   }
 }
-class App extends PureComponent {
+
+class App extends Component<WithTranslation,any> {
   state = {
     path: '',
     rightLevel: 0,
-    projectList: [],
+    projectList: [] as projectItemType[],
     deviceList: [],
     serverList: [
       {
@@ -39,100 +41,109 @@ class App extends PureComponent {
         username: 'root',
         password: `kX/s567GGm8okhH/`,
         port: 22,
-        status: 'not checked',
+        status: -1,
       } as serverInfoItem,
     ],
-    expList: [],
+    expList: [] as expItemType[],
     logList: [] as string[],
     throughputData: [] as DetailLineDataItem[],
     snrData: [] as DetailLineDataItem[],
     rawsnrData: [] as snrLineDataItem[],
+    rawthpData: [] as DetailLineDataItem[],
     handoverData: [] as HandoverDataItem[],
     rsrpData: [] as DetailLineDataItem[],
     rawrsrpData: [] as DetailLineDataItem[],
+    bitrateData: [] as DetailLineDataItem[],
+    rawBitrateData: [] as DetailLineDataItem[],
+    bufferData: [] as DetailLineDataItem[],
+    rawBufferData: [] as DetailLineDataItem[],
+    kernalData: [] as KernalDataItem[],
+    serverRtt: [] as DetailLineDataItem[],
+    serverThp: [] as DetailLineDataItem[],
+    rawRbData:[] as RbDataItem[],
+    rbData:[] as RbDataItem[],
+    waiting:[] as Number[],
+    playingTotal:0,
+    waitingTotal:0,
+    clientSum:0,
     onlineLock: true,
-    onlineStatus:0,
+    onlineStatus: 1,
+    diff:-1,
+    simuType:"",
   };
-  resolveSnr(value: snrLineDataItem[]){
-    let newRawData = value;
-    let appendData = [] as DetailLineDataItem[];
-    if (this.state.rawsnrData.length > 0)
-      newRawData.unshift(
-        this.state.rawsnrData[
-          this.state.rawsnrData.length - 1
-        ] as snrLineDataItem
-      );
-    if (newRawData[0] === undefined) newRawData.shift();
-    let pointer = Math.ceil(newRawData[0].timestamp * 10);
+  resolveSnr(value: snrLineDataItem[]) {
+    if (value.length===0 || this.state.diff<0) return;
+
+    let newRawData = this.state.rawsnrData.concat(value.map(item=>({...item,timestamp:item.timestamp+this.state.diff})));
+    newRawData.sort((a, b) => a.timestamp - b.timestamp);
+    let newData = [] as DetailLineDataItem[];
+    let pointer = Math.ceil(newRawData[0].timestamp / 100)*100; //this will discard the first point
     for (let i = 1; i < newRawData.length; i++) {
-      while (pointer <= newRawData[i].timestamp * 10) {
+      while (pointer <= newRawData[i].timestamp ) {
         let k =
           (newRawData[i - 1].value - newRawData[i].value) /
           (newRawData[i - 1].timestamp - newRawData[i].timestamp);
-        appendData.push({
-          timestamp: pointer / 10,
-          time: moment(pointer * 100).format('HH:mm:ss.S'),
+        newData.push({
+          timestamp: pointer ,
+          time: moment(pointer ).format('HH:mm:ss.S'),
           value:
             Math.round(
-              (k * (pointer / 10 - newRawData[i].timestamp) +
+              (k * (pointer  - newRawData[i].timestamp) +
                 newRawData[i].value) *
                 10
             ) / 10,
         });
-        pointer = pointer + 1;
+        pointer = pointer + 100;
       }
     }
     this.setState({
-      snrData: [...this.state.snrData, ...appendData],
-      rawsnrData: this.state.rawsnrData.concat(value),
+      snrData: newData,
+      rawsnrData: newRawData,
     });
   }
-  resolveRsrp(value: NumberLineDataItem[]){
-    let newRawData = value;
-    let appendData = [] as DetailLineDataItem[];
-    if (this.state.rawrsrpData.length > 0)
-      newRawData.unshift(
-        this.state.rawrsrpData[
-          this.state.rawrsrpData.length - 1
-        ] as NumberLineDataItem
-      );
-    //todo
-    if (newRawData[0] === undefined) newRawData.shift();
-    let pointer = Math.ceil(newRawData[0].timestamp * 10);
+  resolveRsrp(value: NumberLineDataItem[]) {
+    if (value.length === 0||this.state.diff<0) return;
+
+    let newRawData = this.state.rawrsrpData.concat(value.map(item=>({...item,timestamp:item.timestamp+this.state.diff})));
+    newRawData.sort((a, b) => a.timestamp - b.timestamp);
+    let newData = [] as DetailLineDataItem[];
+    let pointer = Math.ceil(newRawData[0].timestamp /100)*100;
     for (let i = 1; i < newRawData.length; i++) {
-      while (pointer <= newRawData[i].timestamp * 10) {
+      while (pointer <= newRawData[i].timestamp ) {
         let k =
           (newRawData[i - 1].value - newRawData[i].value) /
           (newRawData[i - 1].timestamp - newRawData[i].timestamp);
-        appendData.push({
-          timestamp: pointer / 10,
+        newData.push({
+          timestamp: pointer,
           time: moment(pointer * 100).format('HH:mm:ss.S'),
           value:
             Math.round(
-              (k * (pointer / 10 - newRawData[i].timestamp) +
+              (k * (pointer  - newRawData[i].timestamp) +
                 newRawData[i].value) *
                 10
             ) / 10,
         });
-        pointer = pointer + 1;
+        pointer = pointer + 100;
       }
     }
     this.setState({
-      rsrpData: [...this.state.rsrpData, ...appendData],
-      rawrsrpData: this.state.rawrsrpData.concat(value),
+      rsrpData: newData,
+      rawrsrpData: newRawData,
     });
   }
-  resolveHandover(value:HandoverDataItem[]){
+  resolveHandover(value: HandoverDataItem[]) {
     this.setState({
-      handoverData: [...this.state.handoverData, ...value],
+      handoverData: [...this.state.handoverData, ...value.map(item=>({...item,start:item.start+this.state.diff,end:item.end+this.state.diff}))],
     });
   }
-  resolveThroughput(value: NumberLineDataItem[]){
-    let newRawData = value;
-    let appendData = [] as DetailLineDataItem[];
-    let oldData = this.state.throughputData;
-    let pointer = Math.ceil(newRawData[0].timestamp * 10);
-    const end = Math.ceil(newRawData[newRawData.length - 1].timestamp * 10);
+  resolveThroughput(value: NumberLineDataItem[]) {
+    if (value.length === 0||this.state.diff<0) return;
+
+    let newRawData = this.state.rawthpData.concat(value.map(item=>({...item,timestamp:item.timestamp+this.state.diff})));
+    newRawData.sort((a, b) => a.timestamp - b.timestamp);
+    let newData = [] as DetailLineDataItem[];
+    let pointer = Math.ceil(newRawData[0].timestamp /100)*100;
+    const end = Math.floor(newRawData[newRawData.length - 1].timestamp /100)*100;
     // if(this.state.throughputData.length>0&&pointer==Math.round(this.state.throughputData[this.state.throughputData.length-1].timestamp*10))
     let i = 0;
 
@@ -140,45 +151,141 @@ class App extends PureComponent {
       let sum = 0;
       for (
         ;
-        i < newRawData.length && pointer >= newRawData[i].timestamp * 10;
+        i < newRawData.length && pointer >= newRawData[i].timestamp ;
         ++i
       )
         sum += newRawData[i].value;
-      appendData.push({
-        timestamp: pointer / 10,
+      newData.push({
+        timestamp: pointer,
         time: moment(pointer * 100).format('HH:mm:ss.S'),
         value: (sum * 8) / 100000, //1000 1000 0.1 to bits
       });
 
-      pointer = pointer + 1;
+      pointer = pointer + 100;
     }
-    if (oldData.length > 0) {
-      if (
-        appendData[0].timestamp - oldData[oldData.length - 1].timestamp <
-        0.05
-      ) {
-        let tail = oldData.pop();
-        if (tail?.value) appendData[0].value += tail?.value;
-      } else {
-        while (
-          appendData[0].timestamp - oldData[oldData.length - 1].timestamp >
-          0.15
-        ) {
-          let tailTimestamp = oldData[oldData.length - 1].timestamp;
-          oldData.push({
-            timestamp: tailTimestamp + 0.1,
-            time: moment(tailTimestamp * 1000).format('HH:mm:ss.S'),
-            value: 0,
-          });
-        }
+    // if (oldData.length > 0) {
+    //   if (
+    //     appendData[0].timestamp - oldData[oldData.length - 1].timestamp <
+    //     0.05
+    //   ) {
+    //     let tail = oldData.pop();
+    //     if (tail?.value) appendData[0].value += tail?.value;
+    //   } else {
+    //     while (
+    //       appendData[0].timestamp - oldData[oldData.length - 1].timestamp >
+    //       0.15
+    //     ) {
+    //       let tailTimestamp = oldData[oldData.length - 1].timestamp;
+    //       oldData.push({
+    //         timestamp: tailTimestamp + 0.1,
+    //         time: moment(tailTimestamp * 1000).format('HH:mm:ss.S'),
+    //         value: 0,
+    //       });
+    //     }
+    //   }
+    // }
+
+    this.setState({
+      throughputData: newData,
+      rawthpData: newRawData,
+    });
+  }
+  resolvePcapThroughput(value:NumberLineDataItem[]){
+    this.setState({
+      throughputData: value,
+      rawthpData: value,
+    });
+  }
+  resolveBuffer(value: DetailLineDataItem[]) {
+    let newRawData = value;
+    if (newRawData.length === this.state.rawBufferData.length) return;
+    let newData = [] as DetailLineDataItem[];
+    let pointer = Math.ceil(newRawData[0].timestamp /100)*100;
+    for (let i = 1; i < newRawData.length; i++) {
+      while (pointer <= newRawData[i].timestamp ) {
+        let k =
+          (newRawData[i - 1].value - newRawData[i].value) /
+          (newRawData[i - 1].timestamp - newRawData[i].timestamp);
+        newData.push({
+          timestamp: pointer ,
+          time: moment(pointer * 100).format('HH:mm:ss.S'),
+          value:
+            Math.round(
+              (k * (pointer  - newRawData[i].timestamp) +
+                newRawData[i].value) *
+                10
+            ) / 10,
+        });
+        pointer = pointer + 100;
+      }
+    }
+    this.setState({
+      bufferData: newData,
+      rawBufferData: newRawData,
+    });
+  }
+  resolveBitrate(value: DetailLineDataItem[]) {
+    let newRawData = value;
+    if (newRawData.length === this.state.rawBitrateData.length) return;
+    let newData = [] as DetailLineDataItem[];
+
+    let pointer = Math.ceil(newRawData[0].timestamp / 100)*100;
+    let tValue = newRawData[0].value;
+    for (let i = 1; i < newRawData.length; i++) {
+      tValue = newRawData[i].value;
+      while (pointer <= newRawData[i].timestamp ) {
+        newData.push({
+          timestamp: pointer ,
+          time: moment(pointer * 100).format('HH:mm:ss.S'),
+          value: tValue,
+        });
+        pointer = pointer + 100;
       }
     }
 
     this.setState({
-      throughputData: [...oldData, ...appendData],
+      bitrateData: newData,
+      rawBitrateData: newRawData,
     });
   }
 
+  resolveRb(value:RbDataItem[]){
+    if (value.length === 0||this.state.diff<0) return;
+
+    let newRawData = this.state.rawRbData.concat(value.map(item=>({...item,timestamp:item.timestamp+this.state.diff})));
+    newRawData.sort((a, b) => a.timestamp - b.timestamp);
+    let newData = [] as RbDataItem[];
+    let pointer = Math.ceil(newRawData[0].timestamp /100)*100;
+    const end = Math.floor(newRawData[newRawData.length - 1].timestamp /100)*100;
+    let i = 0;
+    while (pointer <= end) {
+      let sum = 0;
+      let start = i;
+      for (
+        ;
+        i < newRawData.length && pointer >= newRawData[i].timestamp ;
+        ++i
+      )
+        sum += newRawData[i].value;
+      for(let j =start;j<i;j++){
+        newRawData[j].util=sum*10
+      }
+
+      newData.push({
+        timestamp: pointer,
+        value: sum*10, //1000 1000 0.1 to bits
+        util:sum*10,
+        type:newRawData[i].type
+      });
+
+      pointer = pointer + 100;
+    }
+    console.log(i,newRawData.slice(0,10))
+    this.setState({
+      rbData: newData,
+      rawRbData: newRawData,
+    });
+  }
 
   constructor(props: any) {
     super(props);
@@ -205,7 +312,7 @@ class App extends PureComponent {
                 projectList: [
                   ...this.state.projectList,
                   {
-                    trace: this.state.projectList.length,
+                    trace: Math.max(...this.state.projectList.map(item=>item.trace))+1,
                     index: data.dataIndex,
                     date: data.dataIndex.split('T')[0],
                     time: data.dataIndex.split('T')[1].replaceAll(':', ''),
@@ -215,12 +322,12 @@ class App extends PureComponent {
                     expType: newlist[index].expType,
                     timeDur: data.timeDur,
                     rat: data.rat,
-                    status1: 1, //0 完成 1 未同步 -1 同步中
+                    status1: 1, //0 完成 1 Not Finished  -1 Synchronizing
                     status2:
                       newlist[index].expType === 'TCP' ||
                       newlist[index].expType === 'QUIC'
                         ? 1
-                        : 0, //0 完成 1 未同步 -1 同步中
+                        : 0, //0 完成 1 Not Finished  -1 Synchronizing
                   },
                 ],
               },
@@ -275,7 +382,7 @@ class App extends PureComponent {
         (item: serverInfoItem) => data.ip === item.ip
       );
       if (index >= 0) {
-        newlist[index].status = data.code == 0 ? 'ready' : 'error';
+        newlist[index].status = data.code == 0 ? 1 : 0;
       }
       this.setState({ serverList: [...newlist] }, () => {
         console.log(this.state.serverList);
@@ -288,155 +395,25 @@ class App extends PureComponent {
         projectList: projectItemType[];
         serverList: serverInfoItem[];
       }) => {
-        console.log('server:', data.serverList);
         this.setState({
           path: data.path,
           serverList: data.serverList,
           projectList: data.projectList,
           rightLevel: 1,
           throughputData: [],
+          rbData:[],
+          rawRbData:[],
           snrData: [],
           rsrpData: [],
           handoverData: [],
           rawrsrpData: [],
           rawsnrData: [],
-        });
-      }
-    );
-    window.jsBridge.on(
-      'throughput',
-      (data: { deviceId: string; value: NumberLineDataItem[] }) => {
-        let newRawData = data.value;
-        let appendData = [] as DetailLineDataItem[];
-        let oldData = this.state.throughputData;
-        let pointer = Math.ceil(newRawData[0].timestamp * 10);
-        const end = Math.ceil(newRawData[newRawData.length - 1].timestamp * 10);
-        // if(this.state.throughputData.length>0&&pointer==Math.round(this.state.throughputData[this.state.throughputData.length-1].timestamp*10))
-        let i = 0;
-
-        while (pointer <= end) {
-          let sum = 0;
-          for (
-            ;
-            i < newRawData.length && pointer >= newRawData[i].timestamp * 10;
-            ++i
-          )
-            sum += newRawData[i].value;
-          appendData.push({
-            timestamp: pointer / 10,
-            time: moment(pointer * 100).format('HH:mm:ss.S'),
-            value: (sum * 8) / 100000, //1000 1000 0.1 to bits
-          });
-
-          pointer = pointer + 1;
-        }
-        if (oldData.length > 0) {
-          if (
-            appendData[0].timestamp - oldData[oldData.length - 1].timestamp <
-            0.05
-          ) {
-            let tail = oldData.pop();
-            if (tail?.value) appendData[0].value += tail?.value;
-          } else {
-            while (
-              appendData[0].timestamp - oldData[oldData.length - 1].timestamp >
-              0.15
-            ) {
-              let tailTimestamp = oldData[oldData.length - 1].timestamp;
-              oldData.push({
-                timestamp: tailTimestamp + 0.1,
-                time: moment(tailTimestamp * 1000).format('HH:mm:ss.S'),
-                value: 0,
-              });
-            }
-          }
-        }
-
-        this.setState({
-          throughputData: [...oldData, ...appendData],
-        });
-      }
-    );
-    window.jsBridge.on(
-      'snr',
-      (data: { deviceId: string; value: NumberLineDataItem[] }) => {
-        let newRawData = data.value;
-        let appendData = [] as DetailLineDataItem[];
-        if (this.state.rawsnrData.length > 0)
-          newRawData.unshift(
-            this.state.rawsnrData[
-              this.state.rawsnrData.length - 1
-            ] as NumberLineDataItem
-          );
-        if (newRawData[0] === undefined) newRawData.shift();
-        let pointer = Math.ceil(newRawData[0].timestamp * 10);
-        for (let i = 1; i < newRawData.length; i++) {
-          while (pointer <= newRawData[i].timestamp * 10) {
-            let k =
-              (newRawData[i - 1].value - newRawData[i].value) /
-              (newRawData[i - 1].timestamp - newRawData[i].timestamp);
-            appendData.push({
-              timestamp: pointer / 10,
-              time: moment(pointer * 100).format('HH:mm:ss.S'),
-              value:
-                Math.round(
-                  (k * (pointer / 10 - newRawData[i].timestamp) +
-                    newRawData[i].value) *
-                    10
-                ) / 10,
-            });
-            pointer = pointer + 1;
-          }
-        }
-        this.setState({
-          snrData: [...this.state.snrData, ...appendData],
-          rawsnrData: this.state.rawsnrData.concat(data.value),
-        });
-      }
-    );
-    window.jsBridge.on(
-      'duration',
-      (data: { deviceId: string; value: HandoverDataItem[] }) => {
-        this.setState({
-          handoverData: [...this.state.handoverData, ...data.value],
-        });
-      }
-    );
-    window.jsBridge.on(
-      'rsrp',
-      (data: { deviceId: string; value: NumberLineDataItem[] }) => {
-        let newRawData = data.value;
-        let appendData = [] as DetailLineDataItem[];
-        if (this.state.rawrsrpData.length > 0)
-          newRawData.unshift(
-            this.state.rawrsrpData[
-              this.state.rawrsrpData.length - 1
-            ] as NumberLineDataItem
-          );
-        //todo
-        if (newRawData[0] === undefined) newRawData.shift();
-        let pointer = Math.ceil(newRawData[0].timestamp * 10);
-        for (let i = 1; i < newRawData.length; i++) {
-          while (pointer <= newRawData[i].timestamp * 10) {
-            let k =
-              (newRawData[i - 1].value - newRawData[i].value) /
-              (newRawData[i - 1].timestamp - newRawData[i].timestamp);
-            appendData.push({
-              timestamp: pointer / 10,
-              time: moment(pointer * 100).format('HH:mm:ss.S'),
-              value:
-                Math.round(
-                  (k * (pointer / 10 - newRawData[i].timestamp) +
-                    newRawData[i].value) *
-                    10
-                ) / 10,
-            });
-            pointer = pointer + 1;
-          }
-        }
-        this.setState({
-          rsrpData: [...this.state.rsrpData, ...appendData],
-          rawrsrpData: this.state.rawrsrpData.concat(data.value),
+          rawthpData: [],
+          rawBitrateData: [],
+          bitrateData: [],
+          bufferData: [],
+          rawBufferData: [],
+          kernalData: [],
         });
       }
     );
@@ -445,27 +422,88 @@ class App extends PureComponent {
     });
     window.jsBridge.on(
       'onlineData',
-      (data: { deviceId: string;snrValue:snrLineDataItem[];rsrpValue:NumberLineDataItem[];thpValue:NumberLineDataItem[]; handoverValue: HandoverDataItem[],status:number }) => {
-        this.resolveRsrp(data.rsrpValue)
-        this.resolveSnr(data.snrValue)
-        this.resolveThroughput(data.thpValue)
-        this.resolveHandover(data.handoverValue)
-        if(this.state.onlineStatus>0){
-        this.setState({onlineStatus:data.status})
+      (data: {
+        deviceId: string;
+        snrValue: snrLineDataItem[];
+        rsrpValue: NumberLineDataItem[];
+        thpValue: NumberLineDataItem[];
+        handoverValue: HandoverDataItem[];
+        rbValue:RbDataItem[];
+        status: number;
+      }) => {
+        if(data.rsrpValue)
+        this.resolveRsrp(data.rsrpValue);
+        if(data.snrValue)
+        this.resolveSnr(data.snrValue);
+        if(data.thpValue)
+        this.resolvePcapThroughput(data.thpValue);
+        //this.resolveThroughput(data.thpValue);
+        if(data.handoverValue)
+        this.resolveHandover(data.handoverValue);
+        if(data.rbValue)
+        this.resolveRb(data.rbValue)
+        if (data.status!=undefined &&this.state.onlineStatus > 0) {
+          this.setState({ onlineStatus: data.status });
         }
-        console.log(this.state.onlineStatus)
       }
     );
-    window.jsBridge.on("videoData",(data:{deviceId:string;videoValue:string})=>{
+    window.jsBridge.on(
+      'onlineVideo',
+      (data: {
+        deviceId: string;
+        buffer: NumberLineDataItem[];
+        bitrate: NumberLineDataItem[];
+        waiting:Number[];
+        time:[Number,Number];
+        status: Boolean; //true：finished
+      }) => {
+        this.resolveBuffer(data.buffer);
+        this.resolveBitrate(data.bitrate);
+        console.log(data.status)
+        if (data.status) {
+          this.setState({ onlineStatus: Number(!data.status )});
+        }
+        if(data.waiting && data.time){
+        this.setState({
+          waiting:data.waiting,
+          playingTotal:data.time[0],
+          waitingTotal:data.time[1]
+        })
+      }
+      }
+    );
+    window.jsBridge.on(
+      'onlineCore',
+      (data: { deviceId: string; coreData: KernalDataItem[] }) => {
+        this.setState({ kernalData: data.coreData });
+      }
+    );
+    window.jsBridge.on(
+      'onlinePcap',
+      (data: { deviceId: string; thp: DetailLineDataItem[];rtt:DetailLineDataItem[] }) => {
+        if(data.thp){
+          this.setState({ serverThp:data.thp});
 
-    })
+        }
+        if(data.rtt){
+        this.setState({serverRtt:data.rtt});
+          
+        }
+      }
+    );
+    window.jsBridge.on(
+      'diff',
+      (data: { diff:number}) => {
+        if(data.diff<0||data.diff>72*3600*1000) return ;
+        this.setState({ diff:data.diff});
+      }
+    );
     this.listDevices();
   }
   //device list related
   listDevices() {
     let that = this;
     window.jsBridge.invoke('listDevicesMain', {}, (err: any, data: any) => {
-      console.log('devices:', data);
       that.setState({ deviceList: data.deviceList });
     });
   }
@@ -495,7 +533,7 @@ class App extends PureComponent {
         let list: serverInfoItem[] = [];
 
         that.state.serverList.forEach(function (item: serverInfoItem) {
-          item.status = 'checking';
+          item.status = 2;
           list.push(item);
         });
         that.setState({ serverList: [...list] });
@@ -510,15 +548,7 @@ class App extends PureComponent {
   }
   startExp() {
     let that = this;
-    this.setState({
-      throughputData: [],
-      snrData: [],
-      rsrpData: [],
-      handoverData: [],
-      rawrsrpData: [],
-      rawsnrData: [],
-      onlineStatus:1
-    });
+    this.clearInfo()
     window.jsBridge.invoke(
       'startExpMain',
       that.state.expList,
@@ -539,29 +569,47 @@ class App extends PureComponent {
   }
   startSimu(expInfo: projectItemType) {
     let that = this;
-    this.setState({
-      throughputData: [],
-      snrData: [],
-      rsrpData: [],
-      handoverData: [],
-      rawrsrpData: [],
-      rawsnrData: [],
-    });
+    this.clearInfo()
+    this.setState({simuType:expInfo.expType,onlineStatus:1})
     window.jsBridge.invoke('runSimulate', expInfo, (err: any, data: any) => {
       if (err) {
         console.log(err);
         return;
       }
+      console.log(this.state.simuType)
     });
   }
   clearExp() {
     this.setState({
       expList: [],
+    });
+    this.clearInfo()
+  }
+  clearInfo() {
+    this.setState({
       snrData: [],
       rsrpData: [],
       handoverData: [],
+      throughputData:[],
       rawrsrpData: [],
       rawsnrData: [],
+      rawthpData: [],
+      rawRbData:[],
+      rbData:[],
+      rawBitrateData: [],
+      bitrateData: [],
+      bufferData: [],
+      rawBufferData: [],
+      kernalData: [],
+      serverThp:[],
+      serverRtt:[],
+      waiting:[],
+      playingTotal:0,
+      waitingTotal:0,
+      clientSum:0,
+      onlineStatus:1,
+      diff:-1,
+      simuType:""
     });
   }
   //project related
@@ -639,6 +687,7 @@ class App extends PureComponent {
     );
   }
   render() {
+    const {t} = this.props
     this.listDevices = this.listDevices.bind(this);
     this.addExp = this.addExp.bind(this);
     this.addServer = this.addServer.bind(this);
@@ -651,7 +700,9 @@ class App extends PureComponent {
     this.saveProjectData = this.saveProjectData.bind(this);
     this.remoteServerRequest = this.remoteServerRequest.bind(this);
     this.startSimu = this.startSimu.bind(this);
+
     return (
+
       <HashRouter>
         <Layout>
           <Layout style={{ height: '100vh' }}>
@@ -699,73 +750,72 @@ class App extends PureComponent {
                       throughput={{
                         data: this.state.throughputData,
                         rawData: this.state.throughputData,
-                        extraConfig: { yAxis: { max: 800, min: 0 } },
-                        title: '吞吐量（Mbps)',
+                        extraConfig: { yAxis: { max: this.state.throughputData.length &&Math.max(...this.state.throughputData.map(item=>item.value)), min: 0 } },
+                        title:t('throughput')+'（Mbps)',
                         type: 'throughput',
                       }}
                       status={this.state.onlineStatus}
-
                       rsrp={{
                         data: this.state.rsrpData,
                         rawData: this.state.rawrsrpData,
-                        extraConfig: { yAxis: { max: -40, min: -140 } },
-                        title:'RSRP(dB)',
+                        extraConfig: { yAxis: { max: this.state.rsrpData.length&&Math.max(...this.state.rsrpData.map(item=>item.value)), min:this.state.rsrpData.length&&Math.min(...this.state.rsrpData.map(item=>item.value)) } },
+                        title: t('rsrp')+'(dB)',
                         type: 'rsrp',
                       }}
+                      exptype={
+                        this.state.simuType||
+                        (this.state.expList.length > 0
+                          ? this.state.expList[0].expType
+                          : '')
+                      }
                       snr={{
                         data: this.state.snrData,
                         rawData: this.state.rawsnrData,
-                        extraConfig: { yAxis: { max: 35, min: -30 } },
-                        title:'SNR(dB)',
+                        extraConfig: { yAxis: { max: this.state.snrData.length&&Math.max(...this.state.snrData.map(item=>item.value)), min:this.state.snrData.length&&Math.min(...this.state.snrData.map(item=>item.value)) } },
+                        title: t('snr')+'(dB)',
                         type: 'snr',
                       }}
                       notes={this.state.handoverData}
-
+                      buffer={{
+                        data: this.state.bufferData,
+                        rawData: this.state.rawBufferData,
+                        extraConfig: { yAxis: { max: this.state.bufferData.length&&Math.max(...this.state.bufferData.map(item=>item.value)), min:this.state.bufferData.length&&Math.min(...this.state.bufferData.map(item=>item.value)) } },
+                        title: t('buffer')+'(s)',
+                        type: 'buffer',
+                      }}
+                      kernal={{
+                        data: this.state.kernalData,
+                      }}
+                      bitrate={{
+                        data: this.state.bitrateData,
+                        extraconfig: { yAxis: { max: this.state.bitrateData.length&&Math.max(...this.state.bitrateData.map(item=>item.value)), min:this.state.bitrateData.length&&Math.min(...this.state.bitrateData.map(item=>item.value)) }  },
+                        title: t('bitrate'),
+                        type: 'bitrate',
+                      }}
+                      rb={{
+                        data:this.state.rbData,
+                        rawData:this.state.rawRbData,
+                        extraConfig:{ yAxis: { max: this.state.rbData.length&&Math.max(...this.state.rbData.map(item=>item.value)), min:this.state.rbData.length&&Math.min(...this.state.rbData.map(item=>item.value)) } },
+                        title:t('rbUtil'),
+                        type:'rb'
+                      }}
+                      serverThp={{data:this.state.serverThp}}
+                      serverRtt={{data:this.state.serverRtt}}
+                      clientSum={this.state.clientSum}
+                      waiting={this.state.waiting}
+                      playingTotal={this.state.playingTotal}
+                      waitingTotal={this.state.waitingTotal}
                     />
                   }
                 />
-                {/* <Route
-                  path="/realtime/throughput"
-                  element={
-                    <DisplayCard
-                      data={this.state.throughputData}
-                      rawData={this.state.throughputData}
-                      notes={this.state.handoverData}
-                      extraConfig={{ yAxis: { max: 800, min: 0 } }}
-                      title={'吞吐量（MBps)'}
-                      type={'throughput'}
-                    />
-                  }
-                />
-                <Route
-                  path="/realtime/snr"
-                  element={
-                    <NotedLine
-                      data={this.state.snrData}
-                      notes={this.state.handoverData}
-                      extraConfig={{ yAxis: { max: 35, min: -30 } }}
-                      title={'SNR(dB)'}
-                    />
-                  }
-                />
-                <Route
-                  path="/realtime/rsrp"
-                  element={
-                    <NotedLine
-                      data={this.state.rsrpData}
-                      notes={this.state.handoverData}
-                      extraConfig={{ yAxis: { max: -40, min: -140 } }}
-                      title={'RSRP(dB)'}
-                    />
-                  }
-                /> */}
               </Routes>
             </Content>
           </Layout>
         </Layout>
       </HashRouter>
+
     );
   }
 }
 
-export default App;
+export const  TransApp = withTranslation()(App);

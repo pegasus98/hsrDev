@@ -23,17 +23,23 @@
         }
       },
       on:(channel,func)=>{
-        console.log('注册channel',channel)
         if(typeof window.electron == 'object'){
           window.electron.on(channel, func);
         }
       },
       once:(channel,func)=>{
-        console.log('注册一次性channel',channel)
+        // console.log('注册一次性channel',channel)
         if(typeof window.electron == 'object'){
           window.electron.once(channel, func);
         }
       },
+      
+      sendSync:(channel)=>{
+        if(typeof window.electron == 'object'){
+         return  window.electron.sendSync(channel, func);
+        }
+        return null
+      }
     };
   </script>
 </html>
