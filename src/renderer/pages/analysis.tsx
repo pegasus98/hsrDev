@@ -190,7 +190,6 @@ export default function project(props: any) {
   };
   const onCheck: TreeProps['onCheck'] = (checked) => {
     setSelectedPlotKeys(checked as React.Key[]);
-    console.log(checked);
   };
 
   const handleOk = () => {
@@ -206,7 +205,6 @@ export default function project(props: any) {
         };
       })
       .filter((item) => item.plotKeys.length > 0);
-    console.log(plotRequest);
     setLogHeight(400);
     window.jsBridge.invoke(
       'parsePlotRequestTotal',

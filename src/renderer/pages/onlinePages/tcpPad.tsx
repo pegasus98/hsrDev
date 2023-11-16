@@ -25,7 +25,6 @@ export default function TcpPad(props: {
   let middleRtt = 0;
   const l2 = props.serverRtt.data.length;
   const l1 = props.kernal.data.length;
-  console.log(l1,l2);
   let pointer2 = 0; //rtt
   let pointer1 = 0; //thp
   let mergedData = [] as DualDataItem[];
@@ -107,7 +106,6 @@ export default function TcpPad(props: {
     Rtt95 = rtt[Math.floor(0.95 * rtt.length)].value;
     middleRtt = rtt[Math.floor(rtt.length / 2)].value;
   }
-  console.log(rtt);
   return (
     <Row gutter={[10, 0]}>
       <Col span={8}>

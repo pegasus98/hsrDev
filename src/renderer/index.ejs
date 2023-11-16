@@ -28,7 +28,6 @@
         }
       },
       once:(channel,func)=>{
-        // console.log('注册一次性channel',channel)
         if(typeof window.electron == 'object'){
           window.electron.once(channel, func);
         }

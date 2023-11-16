@@ -187,7 +187,6 @@ const createPyProc = () => {
       let dataString = iconvLite.decode(data, 'cp936');
       dataString.split('\r\n').forEach((line: string) => {
         let r = /^#@[\s\S]+$/;
-        console.log("line:",line)
         if (r.test(line)) {
           mainWindow?.webContents.send('analysisLog', {
             dataString: line.substring(2),

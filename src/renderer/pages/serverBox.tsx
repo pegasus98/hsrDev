@@ -18,7 +18,6 @@ export default function config(props: any) {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
   const [form] = Form.useForm();
-  // console.log(props.serverList)
   const listAdd = () => {
     setVisible(false);
     props.addServer(form.getFieldsValue() as serverInfoItem);

@@ -28,7 +28,6 @@ contextBridge.exposeInMainWorld('electron', {
       const { data, cid, error } = message;
       // 如果存在方法名，则调用对应函数
       if (typeof cid === 'number' && cid >= 1) {
-        //console.log('callback' + message.bridgeName, cid);
         if (typeof error !== 'undefined') {
           callbacks[cid](error);
           delete callbacks[cid];
@@ -65,7 +64,6 @@ contextBridge.exposeInMainWorld('electron', {
       'language-changed'
     ];
     if (validChannels.includes(channel)) {
-      //console.log('render on channel',channel)
       if (!channelCallback.includes(channel)) {
         channelCallback.push(channel);
         ipcRenderer.on(channel, (event, ...args) => func(...args));

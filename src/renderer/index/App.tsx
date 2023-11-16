@@ -336,7 +336,7 @@ class App extends Component<WithTranslation,any> {
             );
         }
         this.setState({ expList: [...newlist] }, () => {
-          console.log(this.state.expList);
+          //console.log(this.state.expList);
         });
       }
     );
@@ -384,7 +384,7 @@ class App extends Component<WithTranslation,any> {
         newlist[index].status = data.code == 0 ? 1 : 0;
       }
       this.setState({ serverList: [...newlist] }, () => {
-        console.log(this.state.serverList);
+        //console.log(this.state.serverList);
       });
     });
     window.jsBridge.on(
@@ -458,7 +458,6 @@ class App extends Component<WithTranslation,any> {
       }) => {
         this.resolveBuffer(data.buffer);
         this.resolveBitrate(data.bitrate);
-        console.log(data.status)
         if (data.status) {
           this.setState({ onlineStatus: Number(!data.status )});
         }
@@ -475,7 +474,6 @@ class App extends Component<WithTranslation,any> {
       'onlineCore',
       (data: { deviceId: string; coreData: KernalDataItem[] }) => {
         this.setState({ kernalData: data.coreData });
-        console.log(data);
       }
     );
     window.jsBridge.on(
@@ -489,7 +487,6 @@ class App extends Component<WithTranslation,any> {
         this.setState({serverRtt:data.rtt});
           
         }
-        console.log(data.rtt);
       }
     );
     window.jsBridge.on(
@@ -577,7 +574,6 @@ class App extends Component<WithTranslation,any> {
         console.log(err);
         return;
       }
-      //console.log(this.state.simuType)
     });
   }
   clearExp() {
@@ -683,7 +679,6 @@ class App extends Component<WithTranslation,any> {
           console.log(err);
           return;
         }
-        console.log(data);
       }
     );
   }

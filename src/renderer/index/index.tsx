@@ -11,7 +11,6 @@ window.jsBridge.on('language-changed', (message:{language:string,namespace:strin
       i18n.addResourceBundle(message.language, message.namespace, message.resource);
     }
     i18n.changeLanguage(message.language);
-    console.log(message)
   });
 
 render(
