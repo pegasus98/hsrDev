@@ -18,7 +18,6 @@ interface paneItem {
 }
 export default function Statistics(props: any) {
   const {t} = useTranslation()
-  console.log(props.rsrp.data)
   return (
     <Layout>
       <Content>

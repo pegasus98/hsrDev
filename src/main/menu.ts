@@ -4,10 +4,14 @@ import {
   shell,
   BrowserWindow,
   MenuItemConstructorOptions,
+  dialog,
 } from 'electron';
+
 import { i18n } from 'i18next';
 import AppConfig from '../config/app.config';
 import apiList from './api';
+import fs from 'fs';
+import path from 'path';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -194,6 +198,28 @@ export default class MenuBuilder {
             accelerator: 'Ctrl+W',
             click: () => {
               this.mainWindow.close();
+            },
+          },
+          {
+            label: localI18n.t('print'),
+            accelerator: 'Ctrl+P',
+            click: () => {
+              this.mainWindow.webContents.printToPDF({pageSize:'A3' }).then(data=>{
+                dialog
+                .showOpenDialog({
+                  properties: ['openDirectory'],
+                  buttonLabel: '打开项目',
+                })
+                .then((result) => {
+                  let filepath = path.join(result.filePaths[0],"res.pdf");
+                  fs.writeFile(filepath, data, error => {
+                   if (error) throw error;
+                   console.log("保存成功");
+                  })
+                });
+
+
+              })
             },
           },
         ],

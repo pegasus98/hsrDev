@@ -250,7 +250,7 @@ export default function videoPad(props: any) {
               <Col span={24}>
               {t('maxRebuffer')}:{' '}
                 {sortedWaiting.length > 0
-                  ? sortedWaiting[sortedWaiting.length - 1] / 1000
+                  ? sortedWaiting[sortedWaiting.length - 1] / 10
                   : 0}{' '}
                 s
               </Col>
@@ -259,7 +259,7 @@ export default function videoPad(props: any) {
               <Col span={24}>
               {t('midRebuffer')}:{' '}
                 {sortedWaiting.length > 0
-                  ? sortedWaiting[Math.round(sortedWaiting.length / 2)] / 1000
+                  ? sortedWaiting[Math.floor(sortedWaiting.length / 2)] / 10
                   : 0}{' '}
                 s
               </Col>

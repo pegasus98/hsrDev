@@ -89,7 +89,7 @@
     "distribution_suf":" Distribution",
     "avgBitrate":"Avg. Bitrate",
     "stdBitrate":"Bitrate Standard Deviation",
-    "smoBitrate":"码率平滑度",
+    "smoBitrate":"Bitrate Smothness",
     "videoQuality":"Video Quality",
     "rebuffer":"Rebuffering",
     "rebufferRatio":"Rebuffer ratio",

@@ -338,10 +338,6 @@ const runExec = (
           }
           rtts = rtts.concat(insertData);
           rtts.sort((a, b) => a.timestamp - b.timestamp);
-          // const localpcap = exec(
-          //   `adb -s ${deviceId}  shell su -c /data/data/ru.meefik.linuxdeploy/files/bin/linuxdeploy shell "tshark -r /home/android/logs/${expTime}/x.pcap -T fields -e ip.len  |awk '{sum += $1}END{   print sum}'"`,
-          //   (error, stdout, stderr) => {
-          //     const sum = parseFloat(stdout);
           mainWindow?.webContents.send('onlinePcap', {
             thp: thps,
             rtt: rtts,
@@ -497,6 +493,7 @@ const runExec = (
 const runSimulate = (expInfo: projectItemType) => {
   if (!('timeDur' in expInfo) || expInfo.timeDur == undefined)
     expInfo.timeDur = 10;
+  const totalTimeDur = expInfo.timeDur;
   let cnt = 0;
   let properPath = getProperPath(
     projectPath,
@@ -687,6 +684,7 @@ const runSimulate = (expInfo: projectItemType) => {
         }
       });
       let thps: DetailLineDataItem[] = Object.values(thpsMap);
+      //rtt
       let rtts: DetailLineDataItem[] = Object.values(rttsMap).map((item) => ({
         timestamp: item.timestamp,
         value: item.value / rttsCnt[item.timestamp],
@@ -695,6 +693,12 @@ const runSimulate = (expInfo: projectItemType) => {
       rtts.sort((a, b) => a.timestamp - b.timestamp);
       let insertData = new Array();
       for (let i = 1; i < rtts.length - 1; i++) {
+        //限制1min 临时修改，之后删除
+        if(rtts[i].timestamp-rtts[0].timestamp>(totalTimeDur+5)*1000) 
+        { 
+          rtts=rtts.slice(0,i);
+          break;
+        }
         if (rtts[i].timestamp - rtts[i - 1].timestamp > 150) {
           let pointer = rtts[i].timestamp - 100;
           while (pointer > rtts[i - 1].timestamp) {
@@ -712,7 +716,6 @@ const runSimulate = (expInfo: projectItemType) => {
       }
       rtts = rtts.concat(insertData);
       rtts.sort((a, b) => a.timestamp - b.timestamp);
-      console.log(rtts.length,thps.length)
       mainWindow?.webContents.send('onlinePcap', {
         thp: thps,
         rtt: rtts,

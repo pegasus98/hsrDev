@@ -20,14 +20,12 @@ export default function TcpPad(props: {
   let middleBltbw = 0;
 
 
-  // let serverSum = 0;
-  // if(props.serverThp.data.length>0)
-  //   serverSum = props.serverThp.data.map(item=>item.value).reduce((a,b)=>(a+b));
   let minRtt = 0;
   let Rtt95 = 0;
   let middleRtt = 0;
   const l2 = props.serverRtt.data.length;
   const l1 = props.kernal.data.length;
+  console.log(l1,l2);
   let pointer2 = 0; //rtt
   let pointer1 = 0; //thp
   let mergedData = [] as DualDataItem[];
@@ -109,14 +107,14 @@ export default function TcpPad(props: {
     Rtt95 = rtt[Math.floor(0.95 * rtt.length)].value;
     middleRtt = rtt[Math.floor(rtt.length / 2)].value;
   }
-
+  console.log(rtt);
   return (
     <Row gutter={[10, 0]}>
       <Col span={8}>
         <Row>
           <Col span={18}>
             <Divider orientation="left" className={styles.tableText}>
-            Latency
+            {t('latency')}
             </Divider>
           </Col>
           <Col span={6}>
@@ -180,7 +178,7 @@ export default function TcpPad(props: {
             span={12}
             style={{ backgroundColor: '#DAE3F3', padding: '10px 0' }}
           >
-            Median RTT
+            {t('midRtt')}
           </Col>
           <Col span={12} style={{ padding: '10px 0' }}>
             {(middleRtt * 1000).toFixed(1)} ms

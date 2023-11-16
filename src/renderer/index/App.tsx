@@ -280,7 +280,6 @@ class App extends Component<WithTranslation,any> {
 
       pointer = pointer + 100;
     }
-    console.log(i,newRawData.slice(0,10))
     this.setState({
       rbData: newData,
       rawRbData: newRawData,
@@ -476,6 +475,7 @@ class App extends Component<WithTranslation,any> {
       'onlineCore',
       (data: { deviceId: string; coreData: KernalDataItem[] }) => {
         this.setState({ kernalData: data.coreData });
+        console.log(data);
       }
     );
     window.jsBridge.on(
@@ -489,6 +489,7 @@ class App extends Component<WithTranslation,any> {
         this.setState({serverRtt:data.rtt});
           
         }
+        console.log(data.rtt);
       }
     );
     window.jsBridge.on(
@@ -548,7 +549,7 @@ class App extends Component<WithTranslation,any> {
   }
   startExp() {
     let that = this;
-    this.clearInfo()
+    this.clearInfo();
     window.jsBridge.invoke(
       'startExpMain',
       that.state.expList,
@@ -576,7 +577,7 @@ class App extends Component<WithTranslation,any> {
         console.log(err);
         return;
       }
-      console.log(this.state.simuType)
+      //console.log(this.state.simuType)
     });
   }
   clearExp() {

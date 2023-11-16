@@ -166,7 +166,7 @@ export default function L2Pad(props: any) {
           item.start >= mergedData[start].timestamp &&
           item.end <= mergedData[end].timestamp
       )
-      .sort((a: any, b: any) => b.duration - a.duration);
+      .sort((a: any, b: any) => a.duration - b.duration);
     const successCnt = sorteddata.filter(
       (item: HandoverDataItem) => item.type === 1
     ).length;
